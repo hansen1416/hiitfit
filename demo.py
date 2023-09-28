@@ -64,6 +64,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     viewer.cam.elevation = 0  # elevation angle
     viewer.cam.azimuth = 0  # azimuth angle
 
+    model.opt.gravity = (0, 0, 0)
+
     # print('default gravity', model.opt.gravity)
     # model.opt.gravity = (0, 0, 10)
     # print('flipped gravity', model.opt.gravity)
@@ -73,7 +75,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     # Close the viewer automatically after 30 wall-seconds.
     start = time.time()
 
-    while viewer.is_running() and time.time() - start < 5:
+    while viewer.is_running() and time.time() - start < 20:
 
         step_start = time.time()
 
