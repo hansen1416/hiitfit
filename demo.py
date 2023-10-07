@@ -51,6 +51,14 @@ mujoco.mj_forward(model, data)
 # print('Generalized positions:', data.qpos)
 # print('Generalized velocities:', data.qvel)
 
+# Get the ID of the joint you want to control
+joint_shoulder_r = model.joint("R_SHOULDER_P")
+
+joint_shoulder_r.qpos0[0] = 2
+
+# Set the desired rotation of the joint
+# rotation = np.array([0, 0, 0, 1]) # Quaternion (w, x, y, z)
+# data.qpos[joint_id:joint_id+4] = rotation
 
 # By calling viewer.launch_passive(model, data).
 # This function does not block, allowing user code to continue execution.
