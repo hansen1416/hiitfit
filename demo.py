@@ -19,23 +19,24 @@ model = mujoco.MjModel.from_xml_path(xml_path)
 scene_option = mujoco.MjvOption()
 scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 
-print('default gravity', model.opt.gravity)
-print('default timestep', model.opt.timestep)
+# print('default gravity', model.opt.gravity)
+# print('default timestep', model.opt.timestep)
 
-print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
-
+# print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
+model.opt.gravity = (0,0,0)
 
 # mjData contains the state and quantities that depend on it.
 # The state is made up of time, generalized positions and generalized velocities.
 # These are respectively data.time, data.qpos and data.qvel.
 data = mujoco.MjData(model)
 
-# bothe geom are in the origin position [[0. 0. 0.] [0. 0. 0.]]
-print(data.geom_xpos)
+# geom positions
+# print(data.geom_xpos)
+
 
 # derived quantities in mjData need to be explicitly propagated
 mujoco.mj_kinematics(model, data)
-print('raw access:\n', data.geom_xpos)
+# print('raw access:\n', data.geom_xpos)
 
 
 
@@ -46,9 +47,10 @@ mujoco.mj_forward(model, data)
 
 # MuJoCo uses a representation known as the "Lagrangian", "generalized" or "additive" representation,
 # whereby objects have no degrees of freedom unless explicitly added using joints.
-print('Total number of DoFs in the model:', model.nv)
-print('Generalized positions:', data.qpos)
-print('Generalized velocities:', data.qvel)
+# print('Total number of DoFs in the model:', model.nv)
+# print('Generalized positions:', data.qpos)
+# print('Generalized velocities:', data.qvel)
+
 
 # By calling viewer.launch_passive(model, data).
 # This function does not block, allowing user code to continue execution.

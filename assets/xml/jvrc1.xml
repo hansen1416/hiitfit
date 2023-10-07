@@ -159,7 +159,7 @@
     <light directional="false" diffuse="0.2 0.2 0.2" specular="0 0 0" pos="0 0 2" dir="0 0 -1" castshadow="false" />
     <light mode="targetbodycom" target="PELVIS_S" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1" />
     <!-- pelvis -->
-    <body name="PELVIS_S" pos="0 0 1.4">
+    <body name="PELVIS_S" pos="0 0 .86">
       <freejoint name="root" />
       <geom class="collision" quat="0.707105 0 0 0.707108" mesh="PELVIS_col" />
       <geom class="visual" quat="0.707105 0 0 0.707108" mesh="PELVIS_vis" material="PELVIS" />
