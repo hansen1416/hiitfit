@@ -54,7 +54,7 @@ mujoco.mj_forward(model, data)
 # Get the ID of the joint you want to control
 joint_shoulder_r = model.joint("R_SHOULDER_P")
 
-joint_shoulder_r.qpos0[0] = 2
+
 
 # Set the desired rotation of the joint
 # rotation = np.array([0, 0, 0, 1]) # Quaternion (w, x, y, z)
@@ -90,6 +90,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         step_start = time.time()
 
         mujoco.mj_step(model, data)
+
+        joint_shoulder_r.qpos0[0] = 2
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
