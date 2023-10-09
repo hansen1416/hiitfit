@@ -25,6 +25,7 @@ and average the reward per episode to have a good estimate.
 """
 
 import math
+import os
 
 import numpy as np
 import mujoco
@@ -35,41 +36,36 @@ from gymnasium import spaces
 from stable_baselines3.common.env_checker import check_env
 
 
-class PunchEnv(gym.Env):
+class MotionEnv(gym.Env):
 
     def __init__(self):
 
-        super(PunchEnv, self).__init__()
+        super(MotionEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
         # self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Box(3)
 
         self.observation_space = spaces.Box(
             low=-1.0, high=1.0, shape=(20,), dtype=float)
 
-        # todo this is linear speed, add acceleration
-        self.shoulder_angle = np.linspace(10, 86, 10)
-        self.elbow_angle = np.linspace(110, 0, 10)
-        self.motion_idx = 0
-        self.direction = 1
+        xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
-        self.model = mujoco.MjModel.from_xml_string(arm_xml)
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
 
-        self.previous_contact_state = False
-        self.current_contact_state = False
-        self.ncon = 0
+        mujoco.mj_kinematics(self.model, self.data)
+
+        mujoco.mj_forward(self.model, self.data)
+
+        self.joint_r_shoulder_p = self.model.joint("R_SHOULDER_P")  # pitch
+        self.joint_r_shoulder_r = self.model.joint("R_SHOULDER_R")  # roll
+        self.joint_r_shoulder_y = self.model.joint("R_SHOULDER_Y")  # yaw
+
+        self.model.opt.gravity = (0, 0, 0)
 
         self.viewer = None
-
-        # previous position of the hand, used to calculate the distance traveled and the direction of current step
-        self.prev_position = None
-        # previous direction of the hand, if the direction changes, zero to accu_distance
-        self.prev_direction = None
-        # the accumulated distance traveled by the hand in one direction
-        self.accu_distance = 0
 
         print("__init__ called")
 
@@ -79,7 +75,6 @@ class PunchEnv(gym.Env):
         print("__del__ called")
 
     def step(self, action):
-        # todo preset 3 punch movement, and let agent choose among, idle, punch1, punch2, punch3
 
         # print(action)
 

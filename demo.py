@@ -20,7 +20,6 @@ scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 # print('default timestep', model.opt.timestep)
 
 # print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
-model.opt.gravity = (0, 0, 0)
 
 # mjData contains the state and quantities that depend on it.
 # The state is made up of time, generalized positions and generalized velocities.
@@ -47,10 +46,6 @@ mujoco.mj_forward(model, data)
 # print('Generalized positions:', data.qpos)
 # print('Generalized velocities:', data.qvel)
 
-# Get the ID of the joint you want to control
-joint_r_shoulder_p = model.joint("R_SHOULDER_P") # pitch
-joint_r_shoulder_r = model.joint("R_SHOULDER_R") # roll
-joint_r_shoulder_y = model.joint("R_SHOULDER_Y") # yaw
 
 # print(dir(model))
 
@@ -64,25 +59,42 @@ joint_r_shoulder_y = model.joint("R_SHOULDER_Y") # yaw
 #         print(attr, getattr(model, attr))
 
 
-
 # print(model.joint())
 # print(model.jnt())
 # exit()
+
+
+# print('default gravity', model.opt.gravity)
+model.opt.gravity = (0, 0, 0)
+# print('flipped gravity', model.opt.gravity)
+
+model.opt.timestep = 0.01
+
 
 alive_sec = 5
 total_frames = alive_sec / model.opt.timestep
 ellapsed_frames = 0
 
-r_shouder_pitch_start = 0
-r_shouder_roll_start = 0
-r_shouder_yaw_start = 0
-r_shouder_pitch_end = 1
-r_shouder_roll_end = 1
-r_shouder_yaw_end = 1
+# pitch, 0 1 0, range="-3.14159 1.0472", real range="-3.14159 3.14159"
+joint_r_shoulder_p = model.joint("R_SHOULDER_P")
+# roll 1 0 0 range="-1.74533 0.174533", real range="-0.3 3.27"
+joint_r_shoulder_r = model.joint("R_SHOULDER_R")
+# yaw 0 0 1 range="-1.5708 1.5708", real range="-0.6 0.3"
+joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
 
-r_shouder_pitch_step = (r_shouder_pitch_end - r_shouder_pitch_start) / total_frames
-r_shouder_roll_step = (r_shouder_roll_end - r_shouder_roll_start) / total_frames
+r_shouder_pitch_start = 0
+r_shouder_roll_start = -0
+r_shouder_yaw_start = 0.3
+r_shouder_pitch_end = 0
+r_shouder_roll_end = -0
+r_shouder_yaw_end = 0.3
+
+r_shouder_pitch_step = (r_shouder_pitch_end -
+                        r_shouder_pitch_start) / total_frames
+r_shouder_roll_step = (r_shouder_roll_end -
+                       r_shouder_roll_start) / total_frames
 r_shouder_yaw_step = (r_shouder_yaw_end - r_shouder_yaw_start) / total_frames
+
 
 # By calling viewer.launch_passive(model, data).
 # This function does not block, allowing user code to continue execution.
@@ -98,14 +110,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     viewer.cam.elevation = -30  # elevation angle
     viewer.cam.azimuth = 180  # azimuth angle
 
-    # print('default gravity', model.opt.gravity)
-    model.opt.gravity = (0, 0, 0)
-    # print('flipped gravity', model.opt.gravity)
-
-    # print('timestep', model.opt.timestep) # 0.001
-
     mujoco.mj_resetData(model, data)
-    
+
     # set initial position of the shoulder joints
     joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
     joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
@@ -121,9 +127,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         # print(data.qpos)
 
-        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_step * ellapsed_frames
-        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_step * ellapsed_frames
-        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_step * ellapsed_frames
+        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
+            r_shouder_pitch_step * ellapsed_frames
+        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start + \
+            r_shouder_roll_step * ellapsed_frames
+        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start + \
+            r_shouder_yaw_step * ellapsed_frames
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
@@ -134,6 +143,5 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         time_until_next_step = model.opt.timestep - (time.time() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)
-
 
     print(ellapsed_frames)
