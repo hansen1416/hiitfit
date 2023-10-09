@@ -7,12 +7,9 @@ import mujoco
 import mujoco.viewer
 
 
-xml_path = os.path.join('assets','xml', 'scene.xml')
+xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
 model = mujoco.MjModel.from_xml_path(xml_path)
-
-
-
 
 
 # enable joint visualization option:
@@ -23,7 +20,7 @@ scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 # print('default timestep', model.opt.timestep)
 
 # print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
-model.opt.gravity = (0,0,0)
+model.opt.gravity = (0, 0, 0)
 
 # mjData contains the state and quantities that depend on it.
 # The state is made up of time, generalized positions and generalized velocities.
@@ -39,7 +36,6 @@ mujoco.mj_kinematics(model, data)
 # print('raw access:\n', data.geom_xpos)
 
 
-
 # MuJoCo's use of generalized coordinates is the reason that calling a function (e.g. mj_forward)
 # is required before rendering or reading the global poses of objects –
 # Cartesian positions are derived from the generalized positions and need to be explicitly computed.
@@ -52,8 +48,20 @@ mujoco.mj_forward(model, data)
 # print('Generalized velocities:', data.qvel)
 
 # Get the ID of the joint you want to control
-joint_shoulder_r = model.joint("R_SHOULDER_P")
+joint_r_shoulder_p = model.joint("R_SHOULDER_P")
+joint_r_shoulder_r = model.joint("R_SHOULDER_R")
+joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
 
+# motor_r_shoulder_p = data.ctrl[joint_r_shoulder_p.id]
+
+# print(data.ctrl[joint_r_shoulder_p.id])
+
+# print(model.actuator)
+
+
+
+# print(data.ctrl)
+# exit()
 
 
 # Set the desired rotation of the joint
@@ -70,28 +78,31 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     viewer.cam.lookat[0] = 0  # x position
     viewer.cam.lookat[1] = 0  # y position
     viewer.cam.lookat[2] = 0  # z position
-    viewer.cam.distance = 10  # distance from the target
-    viewer.cam.elevation = 0  # elevation angle
-    viewer.cam.azimuth = 0  # azimuth angle
-
-    model.opt.gravity = (0, 0, 0)
+    viewer.cam.distance = 6  # distance from the target
+    viewer.cam.elevation = -30  # elevation angle
+    viewer.cam.azimuth = 180  # azimuth angle
 
     # print('default gravity', model.opt.gravity)
-    # model.opt.gravity = (0, 0, 10)
+    model.opt.gravity = (0, 0, 0)
     # print('flipped gravity', model.opt.gravity)
 
     mujoco.mj_resetData(model, data)
+    
+    # set initial position of the shoulder joints
+    joint_r_shoulder_p.qpos0[0] = 1
+    joint_r_shoulder_r.qpos0[0] = 1
+    joint_r_shoulder_y.qpos0[0] = 1
 
     # Close the viewer automatically after 30 wall-seconds.
     start = time.time()
 
-    while viewer.is_running() and time.time() - start < 20:
+    while viewer.is_running() and time.time() - start < 5:
 
         step_start = time.time()
 
         mujoco.mj_step(model, data)
 
-        joint_shoulder_r.qpos0[0] = 2
+        # print(data.ctrl[joint_r_shoulder_p.id])
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
