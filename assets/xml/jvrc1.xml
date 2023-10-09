@@ -508,5 +508,9 @@
     <!-- imu -->
     <gyro name="Accelerometer_gyro" site="imu" />
     <accelerometer name="Accelerometer_accelerometer" site="imu" />
+
+    <jointpos name="L_SHOULDER_P_pos_sensor" joint="L_SHOULDER_P"/>
+    <jointpos name="L_SHOULDER_R_pos_sensor" joint="L_SHOULDER_R"/>
+    <jointpos name="L_SHOULDER_Y_pos_sensor" joint="L_SHOULDER_Y"/>
   </sensor>
 </mujoco>

@@ -48,25 +48,41 @@ mujoco.mj_forward(model, data)
 # print('Generalized velocities:', data.qvel)
 
 # Get the ID of the joint you want to control
-joint_r_shoulder_p = model.joint("R_SHOULDER_P")
-joint_r_shoulder_r = model.joint("R_SHOULDER_R")
-joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
+joint_r_shoulder_p = model.joint("R_SHOULDER_P") # pitch
+joint_r_shoulder_r = model.joint("R_SHOULDER_R") # roll
+joint_r_shoulder_y = model.joint("R_SHOULDER_Y") # yaw
 
-# motor_r_shoulder_p = data.ctrl[joint_r_shoulder_p.id]
+# print(dir(model))
 
-# print(data.ctrl[joint_r_shoulder_p.id])
+# for attr in dir(model):
+#     # # property `attr` of model that contains 'joint' or 'jnt'
+#     # if 'joint' in attr or 'jnt' in attr:
+#     #     # use attr as a string to get the property
+#     #     print(attr, getattr(model, attr))
 
-# print(model.actuator)
+#     if 'sensor' in attr:
+#         print(attr, getattr(model, attr))
 
 
 
-# print(data.ctrl)
+# print(model.joint())
+# print(model.jnt())
 # exit()
 
+alive_sec = 5
+total_frames = alive_sec / model.opt.timestep
+ellapsed_frames = 0
 
-# Set the desired rotation of the joint
-# rotation = np.array([0, 0, 0, 1]) # Quaternion (w, x, y, z)
-# data.qpos[joint_id:joint_id+4] = rotation
+r_shouder_pitch_start = 0
+r_shouder_roll_start = 0
+r_shouder_yaw_start = 0
+r_shouder_pitch_end = 1
+r_shouder_roll_end = 1
+r_shouder_yaw_end = 1
+
+r_shouder_pitch_step = (r_shouder_pitch_end - r_shouder_pitch_start) / total_frames
+r_shouder_roll_step = (r_shouder_roll_end - r_shouder_roll_start) / total_frames
+r_shouder_yaw_step = (r_shouder_yaw_end - r_shouder_yaw_start) / total_frames
 
 # By calling viewer.launch_passive(model, data).
 # This function does not block, allowing user code to continue execution.
@@ -86,28 +102,38 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     model.opt.gravity = (0, 0, 0)
     # print('flipped gravity', model.opt.gravity)
 
+    # print('timestep', model.opt.timestep) # 0.001
+
     mujoco.mj_resetData(model, data)
     
     # set initial position of the shoulder joints
-    joint_r_shoulder_p.qpos0[0] = 1
-    joint_r_shoulder_r.qpos0[0] = 1
-    joint_r_shoulder_y.qpos0[0] = 1
+    joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
+    joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
+    joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
 
-    # Close the viewer automatically after 30 wall-seconds.
     start = time.time()
 
-    while viewer.is_running() and time.time() - start < 5:
+    while viewer.is_running() and time.time() - start < alive_sec:
 
         step_start = time.time()
 
         mujoco.mj_step(model, data)
 
-        # print(data.ctrl[joint_r_shoulder_p.id])
+        # print(data.qpos)
+
+        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_step * ellapsed_frames
+        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_step * ellapsed_frames
+        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_step * ellapsed_frames
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
+
+        ellapsed_frames += 1
 
         # Rudimentary time keeping, will drift relative to wall clock.
         time_until_next_step = model.opt.timestep - (time.time() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)
+
+
+    print(ellapsed_frames)
