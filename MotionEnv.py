@@ -35,6 +35,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from stable_baselines3.common.env_checker import check_env
 
+from utils import euclidean_distance
 
 class MotionEnv(gym.Env):
 
@@ -48,7 +49,7 @@ class MotionEnv(gym.Env):
         # we use the 3 rotation of shoulder as observation, 3 for start rotations, 3 for current positions, 3 for target positions
         # future, use positions of all joints as observation
         self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(9,), dtype=np.float32)
+            low=-1.0, high=1.0, shape=(6,), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
@@ -66,7 +67,11 @@ class MotionEnv(gym.Env):
         self.model.opt.gravity = (0, 0, 0)
 
         self.viewer = None
-        self.target_state = [1, 1, 1]
+
+        self.initial_state = np.array([0, 0, 0])
+        self.target_state = np.array([1, 1, 1])
+
+        self.steps_took = 0
 
         print("__init__ called")
 
@@ -76,6 +81,8 @@ class MotionEnv(gym.Env):
         print("__del__ called")
 
     def step(self, action):
+
+        self.steps_took += 1
 
         # scale all action to pi. and limit to 1 degree per step
         action_scaled = action * (math.pi / 180)
@@ -94,42 +101,40 @@ class MotionEnv(gym.Env):
 
         # observation is current state concatenated with target state
         observation = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
-                               self.joint_r_shoulder_y.qpos0[0], self.target_pos[0], self.target_pos[1], self.target_pos[2]], dtype=np.float32)
+                               self.joint_r_shoulder_y.qpos0[0], self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
 
         # reward is the distance between current state and target state
         # if current closer to target, the reward is higher, and vice versa
-        reward = np.sum(np.isclose(current_state, self.target_state, rtol=1e-05, atol=1e-08)) / len(current_state) * 100
+        reward = euclidean_distance(start_state, self.target_state) - euclidean_distance(current_state, self.target_state)
         
+        # if current state is np.close true to target state, done
+        done = bool(np.isclose(current_state, self.target_state, atol=0.01).all())
 
+        # when step reach a certain number, truncate
+        
+        truncate = True if self.steps_took > 1000 else False
 
-
-        # when contact twice, done
-        if self.ncon >= 2:
-            done = True
-        else:
-            done = False
-
-        truncate = False
-        info = {}
-
-        return observation, reward, done, truncate, info
+        return observation, reward, done, truncate, {}
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
         mujoco.mj_resetData(self.model, self.data)
 
-        self.previous_contact_state = False
-        self.current_contact_state = False
-        self.ncon = 0
+        self.joint_r_shoulder_p.qpos0[0] = self.initial_state[0]
+        self.joint_r_shoulder_r.qpos0[0] = self.initial_state[1]
+        self.joint_r_shoulder_y.qpos0[0] = self.initial_state[2]
 
-        observation = np.zeros(20, dtype=np.float32)
 
-        self.reward = 0
+        observation = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
+                               self.joint_r_shoulder_y.qpos0[0], self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
 
-        # Implement reset method
-        info = {}
-        return observation, info
+
+        self.steps_took = 0
+
+        
+
+        return observation, {}
 
     def render(self, mode="human"):
 
@@ -155,7 +160,7 @@ class MotionEnv(gym.Env):
 
 if __name__ == "__main__":
 
-    env = PunchEnv()
+    env = MotionEnv()
 
     check_env(env)
 
