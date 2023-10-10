@@ -41,14 +41,14 @@ class MotionEnv(gym.Env):
     def __init__(self):
 
         super(MotionEnv, self).__init__()
-        # Define action and observation space
-        # They must be gym.spaces objects
-        # Example when using discrete actions:
-        # self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-        self.action_space = spaces.Box(3)
 
+        # action space is 3 continuous values, representing of 3 rotations of the shoulder
+        self.action_space = spaces.Box(
+            low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+        # we use the 3 rotation of shoulder as observation, 3 for start rotations, 3 for current positions, 3 for target positions
+        # future, use positions of all joints as observation
         self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(20,), dtype=float)
+            low=-1.0, high=1.0, shape=(9,), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
@@ -66,6 +66,7 @@ class MotionEnv(gym.Env):
         self.model.opt.gravity = (0, 0, 0)
 
         self.viewer = None
+        self.target_state = [1, 1, 1]
 
         print("__init__ called")
 
@@ -76,102 +77,31 @@ class MotionEnv(gym.Env):
 
     def step(self, action):
 
-        # print(action)
+        # scale all action to pi. and limit to 1 degree per step
+        action_scaled = action * (math.pi / 180)
 
-        # print(self.data.qpos)
-        # print(self.data.qvel)
+        start_state = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
+                                self.joint_r_shoulder_y.qpos0[0]], dtype=np.float32)
+
+        self.joint_r_shoulder_p.qpos0[0] += action_scaled[0]
+        self.joint_r_shoulder_r.qpos0[0] += action_scaled[1]
+        self.joint_r_shoulder_y.qpos0[0] += action_scaled[2]
 
         mujoco.mj_step(self.model, self.data)
 
-        # joint manipulation start
-        q = quaternions.axangle2quat(
-            [0, 1, 0], math.radians(self.shoulder_angle[self.motion_idx]), is_normalized=True)
+        current_state = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
+                                  self.joint_r_shoulder_y.qpos0[0]], dtype=np.float32)
 
-        self.data.qpos[0] = q[0]  # w
-        self.data.qpos[1] = q[1]  # x
-        self.data.qpos[2] = q[2]  # y
-        self.data.qpos[3] = q[3]  # z
+        # observation is current state concatenated with target state
+        observation = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
+                               self.joint_r_shoulder_y.qpos0[0], self.target_pos[0], self.target_pos[1], self.target_pos[2]], dtype=np.float32)
 
-        self.data.qpos[4] = math.radians(
-            self.elbow_angle[self.motion_idx])  # w
-        self.data.qvel[3] = 0
+        # reward is the distance between current state and target state
+        # if current closer to target, the reward is higher, and vice versa
+        reward = np.sum(np.isclose(current_state, self.target_state, rtol=1e-05, atol=1e-08)) / len(current_state) * 100
+        
 
-        # print(self.data.qpos)
 
-        if action == 1:
-            self.motion_idx += 1
-        elif action == 0:
-            self.motion_idx -= 1
-
-        if self.motion_idx >= len(self.elbow_angle) - 1:
-            self.motion_idx = len(self.elbow_angle) - 1
-        elif self.motion_idx <= 0:
-            self.motion_idx = 0
-
-        # self.viewer.sync()
-
-        # joint manipulation end
-
-        # assemble observation
-        # cartesian position of upper arm, lower arm, hand and ball
-        # quaternion of upper arm, lower arm
-        upper_arm_p = normalize(
-            self.data.geom_xpos[self.model.geom('upper_arm').id])
-        lower_arm_p = normalize(
-            self.data.geom_xpos[self.model.geom('lower_arm').id])
-        hand_p = normalize(self.data.geom_xpos[self.model.geom('hand').id])
-        ball_p = normalize(self.data.geom_xpos[self.model.geom('ball').id])
-
-        upper_arm_r = normalize(quaternions.mat2quat(
-            self.data.geom_xmat[self.model.geom('upper_arm').id]))
-        lower_arm_r = normalize(quaternions.mat2quat(
-            self.data.geom_xmat[self.model.geom('lower_arm').id]))
-
-        # concatenate numpy arrays
-        observation = np.concatenate(
-            (upper_arm_p, lower_arm_p, hand_p, ball_p, upper_arm_r, lower_arm_r), axis=None)
-
-        # print('--------------- observation')
-        # print(observation)
-
-        hand_pos = self.data.geom_xpos[self.model.geom('hand').id].tolist()[
-            :]
-
-        if self.prev_position is not None:
-
-            distance = point_distance(hand_pos, self.prev_position)
-
-            current_direction = hand_pos[0] - self.prev_position[0] > 0
-
-            # print(current_direction)
-            # print(hand_pos[0], self.prev_position[0])
-
-            if self.prev_direction is not None and current_direction == self.prev_direction:
-                self.accu_distance += distance
-            else:
-                self.accu_distance = distance
-
-            self.prev_direction = current_direction
-
-        self.prev_position = hand_pos[:]
-
-        acc_sum = np.sum(np.absolute(self.data.qacc[4:]))
-
-        # reward = self.accu_distance
-        reward = 0
-        # reward is
-        # todo penalize small distance touching,
-        if acc_sum > 200 and self.accu_distance >= 0.3:
-            reward += acc_sum
-            # print(reward)
-
-        if self.data.ncon > 0:
-            self.current_contact_state = True
-
-        if self.previous_contact_state == False and self.current_contact_state == True:
-            self.ncon += 1
-
-        self.previous_contact_state = self.current_contact_state
 
         # when contact twice, done
         if self.ncon >= 2:
@@ -210,9 +140,9 @@ class MotionEnv(gym.Env):
             self.viewer.cam.lookat[0] = 0  # x position
             self.viewer.cam.lookat[1] = 0  # y position
             self.viewer.cam.lookat[2] = 0  # z position
-            self.viewer.cam.distance = 5  # distance from the target
+            self.viewer.cam.distance = 6  # distance from the target
             self.viewer.cam.elevation = -30  # elevation angle
-            self.viewer.cam.azimuth = 0  # azimuth angle
+            self.viewer.cam.azimuth = 180  # azimuth angle
 
         if mode == "human":
 

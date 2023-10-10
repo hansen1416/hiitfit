@@ -83,11 +83,11 @@ joint_r_shoulder_r = model.joint("R_SHOULDER_R")
 joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
 
 r_shouder_pitch_start = 0
-r_shouder_roll_start = -0
-r_shouder_yaw_start = 0.3
-r_shouder_pitch_end = 0
-r_shouder_roll_end = -0
-r_shouder_yaw_end = 0.3
+r_shouder_roll_start = 0
+r_shouder_yaw_start = 0
+r_shouder_pitch_end = 2.14
+r_shouder_roll_end = 2.27
+r_shouder_yaw_end = -0.6
 
 r_shouder_pitch_step = (r_shouder_pitch_end -
                         r_shouder_pitch_start) / total_frames
