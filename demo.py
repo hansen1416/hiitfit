@@ -82,18 +82,25 @@ joint_r_shoulder_r = model.joint("R_SHOULDER_R")
 # yaw 0 0 1 range="-1.5708 1.5708", real range="-0.6 0.3"
 joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
 
-r_shouder_pitch_start = 0
-r_shouder_roll_start = 0
-r_shouder_yaw_start = 0
-r_shouder_pitch_end = 2.14
-r_shouder_roll_end = 2.27
-r_shouder_yaw_end = -0.6
+joint_r_hip_p = model.joint("R_HIP_P")
+joint_r_hip_r = model.joint("R_HIP_R")
+joint_r_hip_y = model.joint("R_HIP_Y")
 
-r_shouder_pitch_step = (r_shouder_pitch_end -
-                        r_shouder_pitch_start) / total_frames
-r_shouder_roll_step = (r_shouder_roll_end -
-                       r_shouder_roll_start) / total_frames
-r_shouder_yaw_step = (r_shouder_yaw_end - r_shouder_yaw_start) / total_frames
+r_shouder_pitch_start = 1
+r_shouder_roll_start = 0.5
+r_shouder_yaw_start = 0.3
+
+
+
+# r_shouder_pitch_end = 2.14
+# r_shouder_roll_end = 2.27
+# r_shouder_yaw_end = -0.6
+
+# r_shouder_pitch_step = (r_shouder_pitch_end -
+#                         r_shouder_pitch_start) / total_frames
+# r_shouder_roll_step = (r_shouder_roll_end -
+#                        r_shouder_roll_start) / total_frames
+# r_shouder_yaw_step = (r_shouder_yaw_end - r_shouder_yaw_start) / total_frames
 
 
 # By calling viewer.launch_passive(model, data).
@@ -117,6 +124,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
     joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
 
+    joint_r_hip_p.qpos0[0] = 1
+    joint_r_hip_r.qpos0[0] = 1
+    joint_r_hip_y.qpos0[0] = 1
+
     start = time.time()
 
     while viewer.is_running() and time.time() - start < alive_sec:
@@ -127,12 +138,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         # print(data.qpos)
 
-        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
-            r_shouder_pitch_step * ellapsed_frames
-        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start + \
-            r_shouder_roll_step * ellapsed_frames
-        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start + \
-            r_shouder_yaw_step * ellapsed_frames
+        # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
+        #     r_shouder_pitch_step * ellapsed_frames
+        # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start + \
+        #     r_shouder_roll_step * ellapsed_frames
+        # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start + \
+        #     r_shouder_yaw_step * ellapsed_frames
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
