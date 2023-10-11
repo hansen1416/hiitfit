@@ -37,6 +37,7 @@ from stable_baselines3.common.env_checker import check_env
 
 from utils import euclidean_distance
 
+
 class MotionEnv(gym.Env):
 
     def __init__(self):
@@ -80,6 +81,11 @@ class MotionEnv(gym.Env):
         # self.viewer.exit()
         print("__del__ called")
 
+    def _get_obs(self):
+
+        return np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0], self.joint_r_shoulder_y.qpos0[0],
+                         self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
+
     def step(self, action):
 
         self.steps_took += 1
@@ -100,18 +106,18 @@ class MotionEnv(gym.Env):
                                   self.joint_r_shoulder_y.qpos0[0]], dtype=np.float32)
 
         # observation is current state concatenated with target state
-        observation = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
-                               self.joint_r_shoulder_y.qpos0[0], self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
-
+        observation = self._get_obs()
         # reward is the distance between current state and target state
         # if current closer to target, the reward is higher, and vice versa
-        reward = euclidean_distance(start_state, self.target_state) - euclidean_distance(current_state, self.target_state)
-        
+        reward = euclidean_distance(
+            start_state, self.target_state) - euclidean_distance(current_state, self.target_state)
+
         # if current state is np.close true to target state, done
-        done = bool(np.isclose(current_state, self.target_state, atol=0.01).all())
+        done = bool(np.isclose(current_state,
+                    self.target_state, atol=0.01).all())
 
         # when step reach a certain number, truncate
-        
+
         truncate = True if self.steps_took > 1000 else False
 
         return observation, reward, done, truncate, {}
@@ -125,14 +131,9 @@ class MotionEnv(gym.Env):
         self.joint_r_shoulder_r.qpos0[0] = self.initial_state[1]
         self.joint_r_shoulder_y.qpos0[0] = self.initial_state[2]
 
-
-        observation = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
-                               self.joint_r_shoulder_y.qpos0[0], self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
-
+        observation = self._get_obs()
 
         self.steps_took = 0
-
-        
 
         return observation, {}
 
