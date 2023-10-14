@@ -7,40 +7,29 @@
 
     <option timestep="0.001" iterations="50" tolerance="1e-10" solver="Newton" jacobian="dense" cone="pyramidal" />
 
-    <default>
-        <geom condim="1" type="mesh" />
-        <joint limited="true" damping="0.2" pos="0 0 0" />
-        <motor ctrllimited="false" forcelimited="false" />
-        <default class="collision">
-            <geom condim="3" group="0" />
-        </default>
-        <default class="visual">
-            <geom group="1" conaffinity="0" contype="0" />
-        </default>
-    </default>
-
     <asset>
-        <!-- collision meshes -->
-        <mesh name="PELVIS_col" file="convex/PELVIS_S.stl" />
-        <mesh name="PELVIS_vis" file="visual/PELVIS_S.obj" />
-
-        <!-- texture png -->
-        <texture name="Map01"   file="texture/Map01_siri.png" type="2d" />
-
-        <!-- materials -->
-        <material name="PELVIS" texture="Map01" shininess="1" specular="1" />
-
+        <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3"
+        rgb2=".2 .3 .4" width="300" height="300"/>
+        <material name="grid" texture="grid" texrepeat="8 8" reflectance=".2"/>
     </asset>
 
     <worldbody>
+
+        <geom size="100 100 .01" type="plane" material="grid"/>
+
         <light directional="false" diffuse="0.2 0.2 0.2" specular="0 0 0" pos="0 0 2" dir="0 0 -1" castshadow="false" />
-        <light mode="targetbodycom" target="PELVIS_S" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1" />
+        <light mode="targetbodycom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1" />
         <!-- pelvis -->
-        <body name="PELVIS_S" pos="0 0 .86">
+        <body name="calf_l" pos="0 0 8">
             <freejoint name="root" />
-            <geom class="collision" quat="0.707105 0 0 0.707108" mesh="PELVIS_col" />
-            <geom class="visual" quat="0.707105 0 0 0.707108" mesh="PELVIS_vis" material="PELVIS" />
+            <geom type="box" size="1 1 2"/>
+            
+            <body name="foot_l" pos="0 0 -3">
+                <joint name="ANKLE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
+                <geom type="box" size="2 1 0.5"/>
+            </body>
         </body>
+
     </worldbody>
 
 </mujoco>

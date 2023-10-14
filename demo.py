@@ -92,7 +92,6 @@ r_shouder_roll_start = 0.5
 r_shouder_yaw_start = 0.3
 
 
-
 # r_shouder_pitch_end = 2.14
 # r_shouder_roll_end = 2.27
 # r_shouder_yaw_end = -0.6
