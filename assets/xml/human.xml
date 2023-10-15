@@ -15,19 +15,50 @@
 
     <worldbody>
 
-        <geom size="100 100 .01" type="plane" material="grid"/>
+        <geom pos="0 0 -12" size="100 100 .01" type="plane" material="grid"/>
 
         <light directional="false" diffuse="0.2 0.2 0.2" specular="0 0 0" pos="0 0 2" dir="0 0 -1" castshadow="false" />
         <light mode="targetbodycom" directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1" />
-        <!-- pelvis -->
-        <body name="calf_l" pos="0 0 8">
-            <freejoint name="root" />
-            <geom type="box" size="1 1 2"/>
-            
-            <body name="foot_l" pos="0 0 -3">
-                <joint name="ANKLE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
-                <geom type="box" size="2 1 0.5"/>
+        
+        <body name="pelvis"  pos="0 0 0">
+
+            <joint name="ROOT" type="free" pos="0 0 0"/>
+            <geom type="box" size=".5 2 .5"/>
+
+            <body name="thigh_l" pos="0 -1.2 -3">
+
+                <joint name="HIP_L" type="ball" pos="0 0 0"/>
+                <geom type="box" size="0.5 0.5 2"/>
+
+                <body name="calf_l" pos="0 0 -5">
+                    <joint name="KNEE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
+                    <geom type="box" size="0.4 0.4 2"/>
+                    
+                    <body name="foot_l" pos="0 0 -3">
+                        <joint name="ANKLE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
+                        <geom type="box" size="1.2 0.6 .5"/>
+                    </body>
+                </body>
+
             </body>
+
+            <body name="thigh_r" pos="0 1.2 -3">
+
+                <joint name="HIP_R" type="ball" pos="0 0 0"/>
+                <geom type="box" size="0.5 0.5 2"/>
+
+                <body name="calf_r" pos="0 0 -5">
+                    <joint name="KNEE_R" type="hinge" pos="0 0 0" axis="0 1 0"/>
+                    <geom type="box" size="0.4 0.4 2"/>
+                    
+                    <body name="foot_r" pos="0 0 -3">
+                        <joint name="ANKLE_R" type="hinge" pos="0 0 0" axis="0 1 0"/>
+                        <geom type="box" size="1.2 0.6 .5"/>
+                    </body>
+                </body>
+
+            </body>
+
         </body>
 
     </worldbody>

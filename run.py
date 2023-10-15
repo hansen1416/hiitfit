@@ -1,10 +1,12 @@
 import time
 import os
 
-import itertools
+from dm_control import mujoco
 import numpy as np
 import mujoco
 import mujoco.viewer
+
+# from dm_control import viewer
 
 
 # xml_path = os.path.join('assets', 'xml', 'scene.xml')
@@ -44,7 +46,7 @@ mujoco.mj_forward(model, data)
 alive_sec = 5
 
 
-joint_ankle_l = model.joint("ANKLE_L")
+# joint_ankle_l = model.joint("ANKLE_L")
 
 # print(joint_ankle_l.qpos)
 
@@ -66,7 +68,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     start = time.time()
 
-    joint_ankle_l.qpos0[0] = 1
+    # joint_ankle_l.qpos0[0] = 1
 
     while viewer.is_running() and time.time() - start < alive_sec:
 
