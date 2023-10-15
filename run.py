@@ -1,7 +1,7 @@
 import time
 import os
 
-from dm_control import mujoco
+# from dm_control import mujoco
 import numpy as np
 import mujoco
 import mujoco.viewer
@@ -55,6 +55,10 @@ alive_sec = 5
 # In this mode, the user’s script is responsible for timing and advancing the physics state,
 # and mouse-drag perturbations will not work unless the user explicitly synchronizes incoming events.
 with mujoco.viewer.launch_passive(model, data) as viewer:
+
+    print(viewer)
+    print(dir(viewer))
+    exit()
 
     # set camera
     viewer.cam.lookat[0] = 0  # x position
