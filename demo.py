@@ -7,8 +7,8 @@ import mujoco
 import mujoco.viewer
 
 
-# xml_path = os.path.join('assets', 'xml', 'scene.xml')
-xml_path = os.path.join('assets', 'xml', 'human.xml')
+xml_path = os.path.join('assets', 'xml', 'scene.xml')
+# xml_path = os.path.join('assets', 'xml', 'human.xml')
 
 model = mujoco.MjModel.from_xml_path(xml_path)
 
