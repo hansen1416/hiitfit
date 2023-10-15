@@ -22,11 +22,11 @@
         
         <body name="pelvis"  pos="0 0 0">
 
-            <!-- <joint name="ROOT" type="free" pos="0 0 0"/>
-            <geom type="box" size=".5 2 .5"/> -->
+            <joint name="ROOT" type="free" pos="0 0 0"/>
+            <geom type="box" size=".5 2 .5"/>
 
             <body name="thigh_l" pos="0 -1.2 -3">
-
+                <joint name="ROOT" type="free" pos="0 0 0"/>
                 <joint name="HIP_L" type="ball" pos="0 0 0"/>
                 <geom type="box" size="0.5 0.5 2"/>
 
@@ -34,7 +34,7 @@
                     <joint name="KNEE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
                     <geom type="box" size="0.4 0.4 2"/>
                     
-                    <body name="foot_l" pos="0 0 -3">
+                    <body name="foot_l" pos="0. 0 -3">
                         <joint name="ANKLE_L" type="hinge" pos="0 0 0" axis="0 1 0"/>
                         <geom type="box" size="1.2 0.6 .5"/>
                     </body>
@@ -42,7 +42,7 @@
 
             </body>
 
-            <!-- <body name="thigh_r" pos="0 1.2 -3">
+            <body name="thigh_r" pos="0 1.2 -3">
 
                 <joint name="HIP_R" type="ball" pos="0 0 0"/>
                 <geom type="box" size="0.5 0.5 2"/>
@@ -57,7 +57,7 @@
                     </body>
                 </body>
 
-            </body> -->
+            </body>
 
         </body>
 
