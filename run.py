@@ -6,8 +6,30 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
+xml_path = os.path.join('assets', 'xml', 'human.xml')
 # from dm_control import viewer
+model = mujoco.MjModel.from_xml_path(xml_path)
+data = mujoco.MjData(model)
+renderer = mujoco.Renderer(model)
 
+viwer = mujoco.viewer.launch_passive(model=model, data=data)
+
+# enable joint visualization option:
+scene_option = mujoco.MjvOption()
+scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+
+duration = 3.8  # (seconds)
+framerate = 10  # (Hz)
+
+# Simulate and display video.
+while data.time < duration:
+    mujoco.mj_step(model, data)
+    if data.time * framerate <= duration * framerate:
+        renderer.update_scene(data, scene_option=scene_option)
+        pixels = renderer.render()
+        print(pixels.shape)
+
+exit()
 
 # xml_path = os.path.join('assets', 'xml', 'scene.xml')
 xml_path = os.path.join('assets', 'xml', 'human.xml')
@@ -55,10 +77,6 @@ alive_sec = 5
 # In this mode, the user’s script is responsible for timing and advancing the physics state,
 # and mouse-drag perturbations will not work unless the user explicitly synchronizes incoming events.
 with mujoco.viewer.launch_passive(model, data) as viewer:
-
-    print(viewer)
-    print(dir(viewer))
-    exit()
 
     # set camera
     viewer.cam.lookat[0] = 0  # x position
