@@ -65,8 +65,7 @@ mujoco.mj_forward(model, data)
 # exit()
 
 
-# print('default gravity', model.opt.gravity)
-# model.opt.gravity = (0, 0, 0)
+
 # print('flipped gravity', model.opt.gravity)
 
 model.opt.timestep = 0.01
@@ -76,12 +75,18 @@ alive_sec = 5
 total_frames = alive_sec / model.opt.timestep
 ellapsed_frames = 0
 
+# print('default gravity', model.opt.gravity)
+model.opt.gravity = (0, 0, -9.81*1)
+
 # pitch, 0 1 0, range="-3.14159 1.0472", real range="-3.14159 3.14159"
 joint_r_shoulder_p = model.joint("R_SHOULDER_P")
 # roll 1 0 0 range="-1.74533 0.174533", real range="-0.3 3.27"
 joint_r_shoulder_r = model.joint("R_SHOULDER_R")
 # yaw 0 0 1 range="-1.5708 1.5708", real range="-0.6 0.3"
 joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
+
+joint_R_ELBOW_P = model.joint("R_ELBOW_P")
+joint_R_ELBOW_Y = model.joint("R_ELBOW_Y")
 
 joint_r_hip_p = model.joint("R_HIP_P")
 joint_r_hip_r = model.joint("R_HIP_R")
@@ -120,13 +125,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     mujoco.mj_resetData(model, data)
 
     # set initial position of the shoulder joints
-    joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
-    joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
-    joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
+    # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
+    # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
+    # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
 
-    joint_r_hip_p.qpos0[0] = 1.1
-    joint_r_hip_r.qpos0[0] = 1.2
-    joint_r_hip_y.qpos0[0] = 1.3
+    # joint_r_hip_p.qpos0[0] = 1.1
+    # joint_r_hip_r.qpos0[0] = 1.2
+    # joint_r_hip_y.qpos0[0] = 1.3
 
     start = time.time()
 
@@ -136,13 +141,24 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         mujoco.mj_step(model, data)
 
-        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
-        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
-        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
+        # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
+        # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
+        # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
 
-        joint_r_hip_p.qpos0[0] = 1.1
-        joint_r_hip_r.qpos0[0] = 1.2
-        joint_r_hip_y.qpos0[0] = 1.3
+        # joint_r_hip_p.qpos0[0] = 1.1
+        # joint_r_hip_r.qpos0[0] = 1.2
+        # joint_r_hip_y.qpos0[0] = 1.3
+
+        joint_R_ELBOW_P.qpos0[0] = 1.7
+        joint_R_ELBOW_Y.qpos0[0] = 0
+
+        # data.qpos[24] = 1
+        # data.qpos[25] = 1
+        # data.qpos[26] = 1
+
+        # print(len(data.qpos[24]))
+
+        # data.qpos[5] = .1
 
         # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
         #     r_shouder_pitch_step * ellapsed_frames
