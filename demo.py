@@ -66,7 +66,7 @@ mujoco.mj_forward(model, data)
 
 
 # print('default gravity', model.opt.gravity)
-model.opt.gravity = (0, 0, 0)
+# model.opt.gravity = (0, 0, 0)
 # print('flipped gravity', model.opt.gravity)
 
 model.opt.timestep = 0.01
@@ -124,9 +124,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
     joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
 
-    joint_r_hip_p.qpos0[0] = 1
-    joint_r_hip_r.qpos0[0] = 1
-    joint_r_hip_y.qpos0[0] = 1
+    joint_r_hip_p.qpos0[0] = 1.1
+    joint_r_hip_r.qpos0[0] = 1.2
+    joint_r_hip_y.qpos0[0] = 1.3
 
     start = time.time()
 
@@ -136,7 +136,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         mujoco.mj_step(model, data)
 
-        # print(data.qpos)
+        joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
+        joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
+        joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
+
+        joint_r_hip_p.qpos0[0] = 1.1
+        joint_r_hip_r.qpos0[0] = 1.2
+        joint_r_hip_y.qpos0[0] = 1.3
 
         # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
         #     r_shouder_pitch_step * ellapsed_frames
