@@ -1,20 +1,93 @@
+"""
+<_MjModelJointViews
+  M0: array([2.88207967])
+  Madr: array([21], dtype=int32)
+  armature: array([0.1925])
+  axis: array([0., 1., 0.])
+  bodyid: array([2], dtype=int32)
+  damping: array([0.2])
+  dofadr: array([6], dtype=int32)
+  frictionloss: array([0.])
+  group: array([0], dtype=int32)
+  id: 1
+  invweight0: array([2.06123843])
+  jntid: array([1], dtype=int32)
+  limited: array([1], dtype=uint8)
+  margin: array([0.])
+  name: 'R_HIP_P'
+  parentid: array([5], dtype=int32)
+  pos: array([0., 0., 0.])
+  qpos0: array([0.])
+  qpos_spring: array([0.])
+  qposadr: array([7], dtype=int32)
+  range: array([-2.0944  ,  0.785398])
+  simplenum: array([0], dtype=int32)
+  solimp: array([[9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00, 9.0e-01]])
+  solref: array([[0.02, 1.  ]])
+  stiffness: array([0.])
+  type: array([3], dtype=int32)
+  user: array([], dtype=float64)
+>
+"""
+
+
 import time
 import os
-import inspect
 
 
-import itertools
 import numpy as np
 import mujoco
 import mujoco.viewer
 
+
 class JointsController:
 
-    def __init__(self) -> None:
-        pass
-    
-    
+    def __init__(self, model) -> None:
 
+        self.model = model
+
+        self.joint_names = [
+            "R_HIP_P",
+            "R_HIP_R",
+            "R_HIP_Y",
+            "R_KNEE",
+            "R_ANKLE_R",
+            "R_ANKLE_P",
+            "L_HIP_P",
+            "L_HIP_R",
+            "L_HIP_Y",
+            "L_KNEE",
+            "L_ANKLE_R",
+            "L_ANKLE_P",
+            "WAIST_Y",
+            "WAIST_P",
+            "WAIST_R",
+            "NECK_Y",
+            "NECK_R",
+            "NECK_P",
+            "R_SHOULDER_P",
+            "R_SHOULDER_R",
+            "R_SHOULDER_Y",
+            "R_ELBOW_P",
+            "R_ELBOW_Y",
+            "R_WRIST_R",
+            "R_WRIST_Y",
+            "L_SHOULDER_P",
+            "L_SHOULDER_R",
+            "L_SHOULDER_Y",
+            "L_ELBOW_P",
+            "L_ELBOW_Y",
+            "L_WRIST_R",
+            "L_WRIST_Y",
+        ]
+
+    def get_joints_rotation(self):
+
+        return [self.model.jnt(joint_name).qpos0[0] for joint_name in self.joint_names]
+
+    def set_joint_rotation(self, joint_name, rotation):
+
+        self.model.jnt(joint_name).qpos0[0] = rotation
 
 
 xml_path = os.path.join('assets', 'xml', 'scene.xml')
@@ -23,30 +96,10 @@ xml_path = os.path.join('assets', 'xml', 'scene.xml')
 model = mujoco.MjModel.from_xml_path(xml_path)
 
 
-# output de definition of the `mujoco._functions.mj_id2name`
-# print(inspect.getsource(mujoco._functions.mj_id2name))
+# # enable joint visualization option:
+# scene_option = mujoco.MjvOption()
+# scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 
-print(model.jnt(0))
-
-
-
-# joint_names = [mujoco._functions.mj_id2name(model, mujoco.const.MJT_JOINT, i) for i in range(model.njnt)]
-# print(joint_names)
-
-
-
-# for attrs in dir(model):
-#     # if attrs contains jnt or joint, print the attribute name and its value
-#     if 'jnt' in attrs or 'joint' in attrs:
-#         print(attrs, getattr(model, attrs))
-exit()
-
-# enable joint visualization option:
-scene_option = mujoco.MjvOption()
-scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
-
-# print('default gravity', model.opt.gravity)
-# print('default timestep', model.opt.timestep)
 
 # print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
 
@@ -76,26 +129,6 @@ mujoco.mj_forward(model, data)
 # print('Generalized velocities:', data.qvel)
 
 
-# print(dir(model))
-
-# for attr in dir(model):
-#     # # property `attr` of model that contains 'joint' or 'jnt'
-#     # if 'joint' in attr or 'jnt' in attr:
-#     #     # use attr as a string to get the property
-#     #     print(attr, getattr(model, attr))
-
-#     if 'sensor' in attr:
-#         print(attr, getattr(model, attr))
-
-
-# print(model.joint())
-# print(model.jnt())
-# exit()
-
-
-
-# print('flipped gravity', model.opt.gravity)
-
 model.opt.timestep = 0.01
 
 
@@ -104,36 +137,9 @@ total_frames = alive_sec / model.opt.timestep
 ellapsed_frames = 0
 
 # print('default gravity', model.opt.gravity)
-model.opt.gravity = (0, 0, -9.81*1)
+model.opt.gravity = (0, 0, -9.81*0)
 
-# pitch, 0 1 0, range="-3.14159 1.0472", real range="-3.14159 3.14159"
-joint_r_shoulder_p = model.joint("R_SHOULDER_P")
-# roll 1 0 0 range="-1.74533 0.174533", real range="-0.3 3.27"
-joint_r_shoulder_r = model.joint("R_SHOULDER_R")
-# yaw 0 0 1 range="-1.5708 1.5708", real range="-0.6 0.3"
-joint_r_shoulder_y = model.joint("R_SHOULDER_Y")
-
-joint_R_ELBOW_P = model.joint("R_ELBOW_P")
-joint_R_ELBOW_Y = model.joint("R_ELBOW_Y")
-
-joint_r_hip_p = model.joint("R_HIP_P")
-joint_r_hip_r = model.joint("R_HIP_R")
-joint_r_hip_y = model.joint("R_HIP_Y")
-
-r_shouder_pitch_start = 1
-r_shouder_roll_start = 0.5
-r_shouder_yaw_start = 0.3
-
-
-# r_shouder_pitch_end = 2.14
-# r_shouder_roll_end = 2.27
-# r_shouder_yaw_end = -0.6
-
-# r_shouder_pitch_step = (r_shouder_pitch_end -
-#                         r_shouder_pitch_start) / total_frames
-# r_shouder_roll_step = (r_shouder_roll_end -
-#                        r_shouder_roll_start) / total_frames
-# r_shouder_yaw_step = (r_shouder_yaw_end - r_shouder_yaw_start) / total_frames
+controller = JointsController(model)
 
 
 # By calling viewer.launch_passive(model, data).
@@ -152,14 +158,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     mujoco.mj_resetData(model, data)
 
-    # set initial position of the shoulder joints
-    # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
-    # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
-    # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
-
-    # joint_r_hip_p.qpos0[0] = 1.1
-    # joint_r_hip_r.qpos0[0] = 1.2
-    # joint_r_hip_y.qpos0[0] = 1.3
+    controller.set_joint_rotation('R_HIP_R', 0.12)
+    controller.set_joint_rotation('L_HIP_R', -0.12)
 
     start = time.time()
 
@@ -169,31 +169,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         mujoco.mj_step(model, data)
 
-        # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start
-        # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start
-        # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start
-
-        # joint_r_hip_p.qpos0[0] = 1.1
-        # joint_r_hip_r.qpos0[0] = 1.2
-        # joint_r_hip_y.qpos0[0] = 1.3
-
-        joint_R_ELBOW_P.qpos0[0] = 1.7
-        joint_R_ELBOW_Y.qpos0[0] = 0
-
-        # data.qpos[24] = 1
-        # data.qpos[25] = 1
-        # data.qpos[26] = 1
-
-        # print(len(data.qpos[24]))
-
-        # data.qpos[5] = .1
-
-        # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
-        #     r_shouder_pitch_step * ellapsed_frames
-        # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start + \
-        #     r_shouder_roll_step * ellapsed_frames
-        # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start + \
-        #     r_shouder_yaw_step * ellapsed_frames
+        print(controller.get_joints_rotation())
+        print(data.qpos)
 
         # Pick up changes to the physics state, apply perturbations, update options from GUI.
         viewer.sync()
