@@ -1,10 +1,20 @@
 import time
 import os
+import inspect
+
 
 import itertools
 import numpy as np
 import mujoco
 import mujoco.viewer
+
+class JointsController:
+
+    def __init__(self) -> None:
+        pass
+    
+    
+
 
 
 xml_path = os.path.join('assets', 'xml', 'scene.xml')
@@ -12,6 +22,24 @@ xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
 model = mujoco.MjModel.from_xml_path(xml_path)
 
+
+# output de definition of the `mujoco._functions.mj_id2name`
+# print(inspect.getsource(mujoco._functions.mj_id2name))
+
+print(model.jnt(0))
+
+
+
+# joint_names = [mujoco._functions.mj_id2name(model, mujoco.const.MJT_JOINT, i) for i in range(model.njnt)]
+# print(joint_names)
+
+
+
+# for attrs in dir(model):
+#     # if attrs contains jnt or joint, print the attribute name and its value
+#     if 'jnt' in attrs or 'joint' in attrs:
+#         print(attrs, getattr(model, attrs))
+exit()
 
 # enable joint visualization option:
 scene_option = mujoco.MjvOption()
