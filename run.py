@@ -123,6 +123,18 @@ print(action_space)
 actuator are the actions
 data.qpos are the observations
 model.jnt to set static pose
+
+venv\Lib\site-packages\dm_control\suite\humanoid_CMU.py
+venv\Lib\site-packages\dm_control\suite\base.py
+venv\Lib\site-packages\dm_control\mujoco\engine.py
+venv\Lib\site-packages\dm_control\rl\control.py
+
+obs['joint_angles'] = physics.joint_angles()
+obs['head_height'] = physics.head_height()
+obs['extremities'] = physics.extremities()
+obs['torso_vertical'] = physics.torso_vertical_orientation()
+obs['com_velocity'] = physics.center_of_mass_velocity()
+obs['velocity'] = physics.velocity()
 """
 class JointsController:
 
@@ -130,7 +142,7 @@ class JointsController:
         self.physics = physics
 
     def get_joints_rotation(self):
-
+        # get all joints rotation, exclude the first freejoint
         return [self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)]
 
     def set_joint_rotation(self, name, rotation):
