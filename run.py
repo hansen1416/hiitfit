@@ -26,9 +26,50 @@
   trntype: array([0])
   user: array([], dtype=float64)
 >
+
+
+<_MjModelJointViews
+  M0: array([51.8459414 , 51.8459414 , 51.8459414 ,  8.43226075,  2.32292814, 10.52306883])
+  Madr: array([ 0,  1,  3,  6, 10, 15])
+  armature: array([0., 0., 0., 0., 0., 0.])
+  axis: array([0., 0., 1.])
+  bodyid: array([1, 1, 1, 1, 1, 1])
+  damping: array([0., 0., 0., 0., 0., 0.])
+  dofadr: array([0])
+  frictionloss: array([0., 0., 0., 0., 0., 0.])
+  group: array([0])
+  id: 0
+  invweight0: array([0.07443921, 0.07443921, 0.07443921, 8.29058174, 8.29058174, 8.29058174])
+  jntid: array([0, 0, 0, 0, 0, 0])
+  limited: array([0], dtype=uint8)
+  margin: array([0.])
+  name: 'root'
+  parentid: array([-1,  0,  1,  2,  3,  4])
+  pos: array([0., 0., 0.])
+  qpos0: array([0., 0., 1., 0.70710678, 0.70710678,0., 0.])
+  qpos_spring: array([0., 0., 1., 0.70710678, 0.70710678,0., 0.])
+  qposadr: array([0])
+  range: array([0., 0.])
+  simplenum: array([0, 0, 0, 0, 0, 0])
+  solimp: array([[9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00],
+       [9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00],
+       [9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00],
+       [9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00],
+       [9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00],
+       [9.0e-01, 9.5e-01, 1.0e-03, 5.0e-01, 2.0e+00]])
+  solref: array([[0.02, 1.  ],
+       [0.02, 1.  ],
+       [0.02, 1.  ],
+       [0.02, 1.  ],
+       [0.02, 1.  ],
+       [0.02, 1.  ]])
+  stiffness: array([0.])
+  type: array([0])
+  user: array([], dtype=float64)
+>
 """
 
-
+import math
 import time
 import os
 
@@ -73,26 +114,37 @@ print(action_space)
 """
 
 # for attr in dir(physics.model):
-#     if attr.startswith('actuator'):
+#     # if attr.startswith('actuator'):
+#     if 'jnt' in attr:
 #         print(attr, getattr(physics.model, attr))
 
 
-class JointController:
+class JointsController:
 
     def __init__(self, physics) -> None:
         self.physics = physics
 
-    def set_by_name(self, name, val):
+    def get_joints_rotation(self):
+
+        return [self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)]
+
+    def set_joint_rotation(self, name, rotation):
+        # all joints are hinge joints, so just set the radian
+        self.physics.model.jnt(name).qpos0[0] = rotation
+
+
+class ActuatorController:
+
+    def __init__(self, physics) -> None:
+        self.physics = physics
+
+    def set_value(self, name, val):
         self.physics.data.ctrl[physics.model.actuator(name).id] = val
 
 
-controller = JointController(physics)
-
 # print(physics.model.actuator('headrx'))
-
 # print(len(physics.data.ctrl))
-
-physics.model.opt.gravity = [0, 0, -9.81*0.1]
+physics.model.opt.gravity = [0, 0, -9.81*0.]
 
 scene_option = mujoco.wrapper.core.MjvOption()
 scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
@@ -106,12 +158,23 @@ frames = []
 physics.reset()  # Reset state and time
 
 
-controller.set_by_name('lfemurrx', 0.3)
-controller.set_by_name('rfemurrx', -0.3)
+actuatorController = ActuatorController(physics)
 
+actuatorController.set_value('lfemurrx', 0.3)
+actuatorController.set_value('rfemurrx', -0.3)
+
+jntController = JointsController(physics)
+
+# jntController.set_joint_rotation('lfemurrx', math.pi/6)
+# jntController.set_joint_rotation('rfemurrx', math.pi/-6)
+
+print(len(physics.data.qpos))
 
 while physics.data.time < duration:
     physics.step()
+
+    # print(physics.data.qpos)
+
     # Note how we collect the video frames. Because physics simulation timesteps
     # are generally much smaller than framerates (the default timestep is 2ms),
     # we don't render after each step.
