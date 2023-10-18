@@ -149,7 +149,7 @@ class ActuatorController:
 
 # print(physics.model.actuator('headrx'))
 # print(len(physics.data.ctrl))
-physics.model.opt.gravity = [0, 0, -9.81*0.]
+physics.model.opt.gravity = [0, 0, -9.81*1]
 
 scene_option = mujoco.wrapper.core.MjvOption()
 scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
@@ -165,13 +165,19 @@ physics.reset()  # Reset state and time
 
 actuatorController = ActuatorController(physics)
 
-actuatorController.set_value('lfemurrx', 0.3)
-actuatorController.set_value('rfemurrx', -0.3)
+# actuatorController.set_value('lfemurrx', 0.3)
+# actuatorController.set_value('rfemurrx', -0.3)
 
 jntController = JointsController(physics)
 
-# jntController.set_joint_rotation('lfemurrx', math.pi/6)
-# jntController.set_joint_rotation('rfemurrx', math.pi/-6)
+jntController.set_joint_rotation('lfemurrz', 0.17)
+jntController.set_joint_rotation('rfemurrz', -0.17)
+
+
+jntController.set_joint_rotation('lhumerusrz', -1.4)
+jntController.set_joint_rotation('lhumerusrx', 0.5)
+jntController.set_joint_rotation('rhumerusrz', 1.4)
+jntController.set_joint_rotation('rhumerusrx', 0.5)
 
 print(len(physics.data.qpos))
 
@@ -190,5 +196,5 @@ while physics.data.time < duration:
 
 # print(frames)
 # Save the frames as a GIF
-frames[0].save("animation.gif", save_all=True,
+frames[0].save("tmp.gif", save_all=True,
                append_images=frames[1:], duration=100, loop=0)
