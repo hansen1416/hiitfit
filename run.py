@@ -1,116 +1,125 @@
+"""
+<_MjModelActuatorViews
+  acc0: array([3359.06079787])
+  actadr: array([-1])
+  actlimited: array([0], dtype=uint8)
+  actnum: array([0])
+  actrange: array([0., 0.])
+  biasprm: array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+  biastype: array([0])
+  cranklength: array([0.])
+  ctrllimited: array([1], dtype=uint8)
+  ctrlrange: array([-1.,  1.])
+  dynprm: array([1., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+  dyntype: array([0])
+  forcelimited: array([0], dtype=uint8)
+  forcerange: array([0., 0.])
+  gainprm: array([1., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+  gaintype: array([0])
+  gear: array([120.,   0.,   0.,   0.,   0.,   0.])
+  group: array([0])
+  id: 5
+  length0: array([0.])
+  lengthrange: array([0., 0.])
+  name: 'lfemurrx'
+  trnid: array([ 3, -1])
+  trntype: array([0])
+  user: array([], dtype=float64)
+>
+"""
+
+
 import time
 import os
 
-# from dm_control import mujoco
 import numpy as np
-import mujoco
-import mujoco.viewer
+from dm_control import mujoco
+from dm_control import viewer
+from dm_control import suite
 
-xml_path = os.path.join('assets', 'xml', 'human.xml')
+# Access to enums and MuJoCo library functions.
+from dm_control.mujoco.wrapper.mjbindings import enums
+from dm_control.mujoco.wrapper.mjbindings import mjlib
+from dm_env import specs
+
+
+import PIL.Image
+
+xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 # from dm_control import viewer
-model = mujoco.MjModel.from_xml_path(xml_path)
-data = mujoco.MjData(model)
-renderer = mujoco.Renderer(model)
 
-viwer = mujoco.viewer.launch_passive(model=model, data=data)
+"""
+physics.model is <class 'dm_control.mujoco.wrapper.core.MjModel'>
+physics.data is <class 'dm_control.mujoco.wrapper.core.MjData'>
+"""
+physics = mujoco.Physics.from_xml_path(xml_path)
 
-# enable joint visualization option:
-scene_option = mujoco.MjvOption()
-scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+"""
+def action_spec(physics):
+    # Returns a `BoundedArraySpec` matching the `physics` actuators.
+    num_actions = physics.model.nu
+    is_limited = physics.model.actuator_ctrllimited.ravel().astype(bool)
+    control_range = physics.model.actuator_ctrlrange
+    minima = np.full(num_actions, fill_value=-mujoco.mjMAXVAL, dtype=float)
+    maxima = np.full(num_actions, fill_value=mujoco.mjMAXVAL, dtype=float)
+    minima[is_limited], maxima[is_limited] = control_range[is_limited].T
 
-duration = 3.8  # (seconds)
-framerate = 10  # (Hz)
+    return specs.BoundedArray(
+        shape=(num_actions,), dtype=float, minimum=minima, maximum=maxima)
+
+
+action_space = action_spec(physics)
+print(action_space)
+"""
+
+# for attr in dir(physics.model):
+#     if attr.startswith('actuator'):
+#         print(attr, getattr(physics.model, attr))
+
+
+class JointController:
+
+    def __init__(self, physics) -> None:
+        self.physics = physics
+
+    def set_by_name(self, name, val):
+        self.physics.data.ctrl[physics.model.actuator(name).id] = val
+
+
+controller = JointController(physics)
+
+# print(physics.model.actuator('headrx'))
+
+# print(len(physics.data.ctrl))
+
+physics.model.opt.gravity = [0, 0, -9.81*0.1]
+
+scene_option = mujoco.wrapper.core.MjvOption()
+scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
+
+duration = 2    # (seconds)
+framerate = 30  # (Hz)
+
 
 # Simulate and display video.
-while data.time < duration:
-    mujoco.mj_step(model, data)
-    if data.time * framerate <= duration * framerate:
-        renderer.update_scene(data, scene_option=scene_option)
-        pixels = renderer.render()
-        print(pixels.shape)
-
-exit()
-
-# xml_path = os.path.join('assets', 'xml', 'scene.xml')
-xml_path = os.path.join('assets', 'xml', 'human.xml')
-
-model = mujoco.MjModel.from_xml_path(xml_path)
+frames = []
+physics.reset()  # Reset state and time
 
 
-# enable joint visualization option:
-scene_option = mujoco.MjvOption()
-scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
-
-# print('default gravity', model.opt.gravity)
-# print('default timestep', model.opt.timestep)
-
-# print('all geom names', [model.geom(i).name for i in range(model.ngeom)])
-
-# mjData contains the state and quantities that depend on it.
-# The state is made up of time, generalized positions and generalized velocities.
-# These are respectively data.time, data.qpos and data.qvel.
-data = mujoco.MjData(model)
-
-# geom positions
-# print(data.geom_xpos)
-
-# model.opt.gravity = (0, 0, 10)
-# derived quantities in mjData need to be explicitly propagated
-mujoco.mj_kinematics(model, data)
-# print('raw access:\n', data.geom_xpos)
+controller.set_by_name('lfemurrx', 0.3)
+controller.set_by_name('rfemurrx', -0.3)
 
 
-# MuJoCo's use of generalized coordinates is the reason that calling a function (e.g. mj_forward)
-# is required before rendering or reading the global poses of objects –
-# Cartesian positions are derived from the generalized positions and need to be explicitly computed.
-mujoco.mj_forward(model, data)
+while physics.data.time < duration:
+    physics.step()
+    # Note how we collect the video frames. Because physics simulation timesteps
+    # are generally much smaller than framerates (the default timestep is 2ms),
+    # we don't render after each step.
+    if len(frames) < physics.data.time * framerate:
+        pixels = physics.render(scene_option=scene_option)
+        frames.append(PIL.Image.fromarray(pixels))
 
-alive_sec = 5
-
-
-# joint_ankle_l = model.joint("ANKLE_L")
-
-# print(joint_ankle_l.qpos)
-
-# By calling viewer.launch_passive(model, data).
-# This function does not block, allowing user code to continue execution.
-# In this mode, the user’s script is responsible for timing and advancing the physics state,
-# and mouse-drag perturbations will not work unless the user explicitly synchronizes incoming events.
-with mujoco.viewer.launch_passive(model, data) as viewer:
-
-    # set camera
-    viewer.cam.lookat[0] = 0  # x position
-    viewer.cam.lookat[1] = 0  # y position
-    viewer.cam.lookat[2] = 0  # z position
-    viewer.cam.distance = 40  # distance from the target
-    viewer.cam.elevation = -30  # elevation angle
-    viewer.cam.azimuth = 0  # azimuth angle
-
-    mujoco.mj_resetData(model, data)
-
-    start = time.time()
-
-    # joint_ankle_l.qpos0[0] = 1
-
-    while viewer.is_running() and time.time() - start < alive_sec:
-
-        step_start = time.time()
-
-        mujoco.mj_step(model, data)
-
-        # print(data.qpos)
-
-        # joint_r_shoulder_p.qpos0[0] = r_shouder_pitch_start + \
-        #     r_shouder_pitch_step * ellapsed_frames
-        # joint_r_shoulder_r.qpos0[0] = r_shouder_roll_start + \
-        #     r_shouder_roll_step * ellapsed_frames
-        # joint_r_shoulder_y.qpos0[0] = r_shouder_yaw_start + \
-        #     r_shouder_yaw_step * ellapsed_frames
-
-        # Pick up changes to the physics state, apply perturbations, update options from GUI.
-        viewer.sync()
-
-        # Rudimentary time keeping, will drift relative to wall clock.
-        time_until_next_step = model.opt.timestep - (time.time() - step_start)
-        if time_until_next_step > 0:
-            time.sleep(time_until_next_step)
+# print(frames)
+# Save the frames as a GIF
+frames[0].save("animation.gif", save_all=True,
+               append_images=frames[1:], duration=100, loop=0)
