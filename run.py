@@ -119,6 +119,11 @@ print(action_space)
 #         print(attr, getattr(physics.model, attr))
 
 
+"""
+actuator are the actions
+data.qpos are the observations
+model.jnt to set static pose
+"""
 class JointsController:
 
     def __init__(self, physics) -> None:
@@ -173,7 +178,8 @@ print(len(physics.data.qpos))
 while physics.data.time < duration:
     physics.step()
 
-    # print(physics.data.qpos)
+    # actuatorController.set_value('lfemurrx', 0)
+    # actuatorController.set_value('rfemurrx', 0)
 
     # Note how we collect the video frames. Because physics simulation timesteps
     # are generally much smaller than framerates (the default timestep is 2ms),
