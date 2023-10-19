@@ -136,6 +136,7 @@ obs['velocity'] = physics.velocity()
 
 xmat is a 3x3 matrix that describes the orientation of the body in space. 
 It is used to transform the body’s local coordinate system to the global coordinate system 1.
+it include the workdbody
 
 xpos is a 3D vector that represents the position of the body’s center of mass 
 in the global coordinate system 1.
@@ -165,6 +166,23 @@ class ActuatorController:
     def set_value(self, name, val):
         self.physics.data.ctrl[physics.model.actuator(name).id] = val
 
+def angle_between_quaternions(a,b):
+    a = np.copy(a).reshape(3, 3)
+    b = np.copy(b).reshape(3, 3)
+
+    # get quaternion from rotation matrix
+    q1 = quaternions.mat2quat(a)
+    q2 = quaternions.mat2quat(b)
+
+    # get quternion that rotate from q1 to q2
+    q = quaternions.qmult(q2, quaternions.qinverse(q1))
+
+    # get rotation axis and angle
+    _, angle = quaternions.quat2axangle(q)
+
+    # print(axis, round(angle,2), angle < 0.001, np.isclose(angle, 0.0, atol=1e-3))
+    return angle
+
 
 # print(physics.model.actuator('headrx'))
 # print(len(physics.data.ctrl))
@@ -173,30 +191,30 @@ physics.model.opt.gravity = [0, 0, -9.81*0]
 scene_option = mujoco.wrapper.core.MjvOption()
 scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
 
+jntController = JointsController(physics)
+
 duration = 2    # (seconds)
 framerate = 30  # (Hz)
 
 
 # Simulate and display video.
 frames = []
+
 physics.reset()  # Reset state and time
 
 
-actuatorController = ActuatorController(physics)
-
-# actuatorController.set_value('lfemurrx', 0.3)
-# actuatorController.set_value('rfemurrx', -0.3)
-
-jntController = JointsController(physics)
-
-# jntController.set_joint_rotation('lfemurrz', 0.17)
-# jntController.set_joint_rotation('rfemurrz', -0.17)
 
 
-# jntController.set_joint_rotation('lhumerusrz', -1.4)
-# jntController.set_joint_rotation('lhumerusrx', 0.5)
-# jntController.set_joint_rotation('rhumerusrz', 1.4)
-# jntController.set_joint_rotation('rhumerusrx', 0.5)
+# set the joint rotation directly to get the desired pose
+jntController.set_joint_rotation('lfemurrz', 0.17)
+jntController.set_joint_rotation('rfemurrz', -0.17)
+
+jntController.set_joint_rotation('lhumerusrz', -1.4)
+jntController.set_joint_rotation('lhumerusrx', 0.5)
+jntController.set_joint_rotation('rhumerusrz', 1.4)
+jntController.set_joint_rotation('rhumerusrx', 0.5)
+
+
 
 
 while physics.data.time < duration:
@@ -209,11 +227,11 @@ while physics.data.time < duration:
         pixels = physics.render(scene_option=scene_option)
         frames.append(PIL.Image.fromarray(pixels))
 
-    print(physics.data.xpos)
-
-    break
+# output `xmat`, we will use as the target for reinforcement learning 
+print(physics.data.xmat)
 
 # print(frames)
 # Save the frames as a GIF
 frames[0].save("tmp.gif", save_all=True,
                append_images=frames[1:], duration=100, loop=0)
+
