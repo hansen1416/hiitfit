@@ -158,7 +158,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     mujoco.mj_resetData(model, data)
 
-    controller.set_joint_rotation('R_HIP_R', 0.12)
+    controller.set_joint_rotation('R_HIP_R', 0.4)
     controller.set_joint_rotation('L_HIP_R', -0.12)
 
     start = time.time()
