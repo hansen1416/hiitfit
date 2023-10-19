@@ -77,13 +77,11 @@ import numpy as np
 from dm_control import mujoco
 from dm_control import viewer
 from dm_control import suite
-
 # Access to enums and MuJoCo library functions.
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_control.mujoco.wrapper.mjbindings import mjlib
 from dm_env import specs
-
-
+from transforms3d import quaternions
 import PIL.Image
 
 xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
