@@ -135,7 +135,16 @@ obs['extremities'] = physics.extremities()
 obs['torso_vertical'] = physics.torso_vertical_orientation()
 obs['com_velocity'] = physics.center_of_mass_velocity()
 obs['velocity'] = physics.velocity()
+
+xmat is a 3x3 matrix that describes the orientation of the body in space. 
+It is used to transform the body’s local coordinate system to the global coordinate system 1.
+
+xpos is a 3D vector that represents the position of the body’s center of mass 
+in the global coordinate system 1.
+
 """
+
+
 class JointsController:
 
     def __init__(self, physics) -> None:
@@ -161,7 +170,7 @@ class ActuatorController:
 
 # print(physics.model.actuator('headrx'))
 # print(len(physics.data.ctrl))
-physics.model.opt.gravity = [0, 0, -9.81*1]
+physics.model.opt.gravity = [0, 0, -9.81*0]
 
 scene_option = mujoco.wrapper.core.MjvOption()
 scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
@@ -182,22 +191,18 @@ actuatorController = ActuatorController(physics)
 
 jntController = JointsController(physics)
 
-jntController.set_joint_rotation('lfemurrz', 0.17)
-jntController.set_joint_rotation('rfemurrz', -0.17)
+# jntController.set_joint_rotation('lfemurrz', 0.17)
+# jntController.set_joint_rotation('rfemurrz', -0.17)
 
 
-jntController.set_joint_rotation('lhumerusrz', -1.4)
-jntController.set_joint_rotation('lhumerusrx', 0.5)
-jntController.set_joint_rotation('rhumerusrz', 1.4)
-jntController.set_joint_rotation('rhumerusrx', 0.5)
+# jntController.set_joint_rotation('lhumerusrz', -1.4)
+# jntController.set_joint_rotation('lhumerusrx', 0.5)
+# jntController.set_joint_rotation('rhumerusrz', 1.4)
+# jntController.set_joint_rotation('rhumerusrx', 0.5)
 
-print(len(physics.data.qpos))
 
 while physics.data.time < duration:
     physics.step()
-
-    # actuatorController.set_value('lfemurrx', 0)
-    # actuatorController.set_value('rfemurrx', 0)
 
     # Note how we collect the video frames. Because physics simulation timesteps
     # are generally much smaller than framerates (the default timestep is 2ms),
@@ -205,6 +210,10 @@ while physics.data.time < duration:
     if len(frames) < physics.data.time * framerate:
         pixels = physics.render(scene_option=scene_option)
         frames.append(PIL.Image.fromarray(pixels))
+
+    print(physics.data.xpos)
+
+    break
 
 # print(frames)
 # Save the frames as a GIF
