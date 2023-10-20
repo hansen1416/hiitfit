@@ -256,12 +256,12 @@ while physics.data.time < duration:
         frames.append(PIL.Image.fromarray(pixels))
 
 # output `xmat`, we will use as the target for reinforcement learning
-b = physics.data.xquat
+b = np.round(physics.data.xquat, decimals=2)
 
 # for i in range(a.shape[0]):
 #     print(angle_between_quat(a[i], b[i]))
 
-# print(a, b)
+print(b)
 
 # print(frames)
 # Save the frames as a GIF

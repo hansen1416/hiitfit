@@ -52,7 +52,7 @@ class MotionEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-1.0, high=1.0, shape=(31,4), dtype=np.float32)
 
-        xml_path = os.path.join('assets', 'xml', 'scene.xml')
+        xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
@@ -61,9 +61,7 @@ class MotionEnv(gym.Env):
 
         mujoco.mj_forward(self.model, self.data)
 
-        self.joint_r_shoulder_p = self.model.joint("R_SHOULDER_P")  # pitch
-        self.joint_r_shoulder_r = self.model.joint("R_SHOULDER_R")  # roll
-        self.joint_r_shoulder_y = self.model.joint("R_SHOULDER_Y")  # yaw
+
 
         self.model.opt.gravity = (0, 0, 0)
 
