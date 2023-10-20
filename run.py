@@ -141,6 +141,7 @@ it include the workdbody
 xpos is a 3D vector that represents the position of the body’s center of mass 
 in the global coordinate system 1.
 
+xquat is a quaternion that describes the orientation of the body in space.
 """
 
 
@@ -151,7 +152,7 @@ class JointsController:
 
     def get_joints_rotation(self):
         # get all joints rotation, exclude the first freejoint
-        return [self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)]
+        return np.array([self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)])
 
     def set_joint_rotation(self, name, rotation):
         # all joints are hinge joints, so just set the radian
@@ -166,13 +167,26 @@ class ActuatorController:
     def set_value(self, name, val):
         self.physics.data.ctrl[physics.model.actuator(name).id] = val
 
-def angle_between_quaternions(a,b):
+
+def angle_between_mat(a, b):
     a = np.copy(a).reshape(3, 3)
     b = np.copy(b).reshape(3, 3)
 
     # get quaternion from rotation matrix
     q1 = quaternions.mat2quat(a)
     q2 = quaternions.mat2quat(b)
+
+    # get quternion that rotate from q1 to q2
+    q = quaternions.qmult(q2, quaternions.qinverse(q1))
+
+    # get rotation axis and angle
+    _, angle = quaternions.quat2axangle(q)
+
+    # print(axis, round(angle,2), angle < 0.001, np.isclose(angle, 0.0, atol=1e-3))
+    return angle
+
+
+def angle_between_quat(q1, q2):
 
     # get quternion that rotate from q1 to q2
     q = quaternions.qmult(q2, quaternions.qinverse(q1))
@@ -193,6 +207,22 @@ scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
 
 jntController = JointsController(physics)
 
+# # list all joint names
+# for i in range(1, physics.model.njnt):
+#     # this doesn't include root freejoint
+#     print(physics.model.jnt(i).name)
+
+# # Cartesian orientation of body frame, include worldbody
+# print(physics.data.xquat)
+
+# exit(0)
+
+# # use all joints rotation as action space, (56,)
+# print(jntController.get_joints_rotation().shape)
+# # body rotation as observation spaece, exclude worldbody, (32, 4)
+# print(physics.data.xquat.shape)
+
+
 duration = 2    # (seconds)
 framerate = 30  # (Hz)
 
@@ -202,7 +232,7 @@ frames = []
 
 physics.reset()  # Reset state and time
 
-
+a = np.copy(physics.data.xquat)
 
 
 # set the joint rotation directly to get the desired pose
@@ -215,8 +245,6 @@ jntController.set_joint_rotation('rhumerusrz', 1.4)
 jntController.set_joint_rotation('rhumerusrx', 0.5)
 
 
-
-
 while physics.data.time < duration:
     physics.step()
 
@@ -227,11 +255,15 @@ while physics.data.time < duration:
         pixels = physics.render(scene_option=scene_option)
         frames.append(PIL.Image.fromarray(pixels))
 
-# output `xmat`, we will use as the target for reinforcement learning 
-print(physics.data.xmat)
+# output `xmat`, we will use as the target for reinforcement learning
+b = physics.data.xquat
+
+# for i in range(a.shape[0]):
+#     print(angle_between_quat(a[i], b[i]))
+
+# print(a, b)
 
 # print(frames)
 # Save the frames as a GIF
 frames[0].save("tmp.gif", save_all=True,
                append_images=frames[1:], duration=100, loop=0)
-

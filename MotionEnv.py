@@ -46,11 +46,11 @@ class MotionEnv(gym.Env):
 
         # action space is 3 continuous values, representing of 3 rotations of the shoulder
         self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+            low=-1.0, high=1.0, shape=(32,), dtype=np.float32)
         # we use the 3 rotation of shoulder as observation, 3 for start rotations, 3 for current positions, 3 for target positions
         # future, use positions of all joints as observation
         self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(6,), dtype=np.float32)
+            low=-1.0, high=1.0, shape=(31,4), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'scene.xml')
 
