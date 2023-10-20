@@ -28,14 +28,14 @@ import math
 import os
 
 import numpy as np
-import mujoco
-import mujoco.viewer
+from dm_control import mujoco
+from dm_control.mujoco.wrapper.mjbindings import enums
 from transforms3d import quaternions
 import gymnasium as gym
 from gymnasium import spaces
 from stable_baselines3.common.env_checker import check_env
 
-from utils import euclidean_distance
+from utils import euclidean_distance, JointsController
 
 
 class MotionEnv(gym.Env):
@@ -46,31 +46,53 @@ class MotionEnv(gym.Env):
 
         # action space is 3 continuous values, representing of 3 rotations of the shoulder
         self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(32,), dtype=np.float32)
-        # we use the 3 rotation of shoulder as observation, 3 for start rotations, 3 for current positions, 3 for target positions
-        # future, use positions of all joints as observation
+            low=-1.0, high=1.0, shape=(56,), dtype=np.float32)
+        # body rotation as observation spaece, exclude worldbody, concatenate with target state, shape (62, 4)
         self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(31,4), dtype=np.float32)
+            low=-1.0, high=1.0, shape=(62, 4), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 
-        self.model = mujoco.MjModel.from_xml_path(xml_path)
-        self.data = mujoco.MjData(self.model)
+        self.physics = mujoco.Physics.from_xml_path(xml_path)
 
-        mujoco.mj_kinematics(self.model, self.data)
+        self.physics.model.opt.gravity = [0, 0, -9.81*0]
 
-        mujoco.mj_forward(self.model, self.data)
-
-
-
-        self.model.opt.gravity = (0, 0, 0)
-
-        self.viewer = None
-
-        self.initial_state = np.array([0, 0, 0])
-        self.target_state = np.array([1, 1, 1])
+        self.target_state = np.array([[0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.7, -0.06, 0.06],
+                                      [0.7,  0.71, -0.06, 0.06],
+                                      [1.,   0.01, -0.09, 0., ],
+                                      [1.,   0.01, -0.09, 0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.7,  0.06, -0.06],
+                                      [0.7,  0.71, 0.06, -0.06],
+                                      [1.,   0.01, 0.09, -0., ],
+                                      [1.,   0.01, 0.09, -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [-0.02, 0.08, -0.71, -0.7,],
+                                      [-0.02, 0.08, -0.71, -0.7,],
+                                      [0.63, 0.56, 0.34, 0.42],
+                                      [0.63, 0.56, 0.34, 0.42],
+                                      [0.63, 0.56, 0.34, 0.42],
+                                      [0.74, 0.39, 0.53, 0.15],
+                                      [0.71, 0.71, -0.,  -0., ],
+                                      [-0.02, 0.08, 0.71, 0.7,],
+                                      [-0.02, 0.08, 0.71, 0.7,],
+                                      [0.63, 0.56, -0.34, -0.42],
+                                      [0.63, 0.56, -0.34, -0.42],
+                                      [0.63, 0.56, -0.34, -0.42],
+                                      [0.74, 0.39, -0.53, -0.15],],)
 
         self.steps_took = 0
+        self.viewer = None
+
+        self.jntController = JointsController(self.physics)
 
         print("__init__ called")
 
@@ -80,9 +102,8 @@ class MotionEnv(gym.Env):
         print("__del__ called")
 
     def _get_obs(self):
-
-        return np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0], self.joint_r_shoulder_y.qpos0[0],
-                         self.target_state[0], self.target_state[1], self.target_state[2]], dtype=np.float32)
+        # body rotation as observation spaece, exclude worldbody, concatenate with target state, shape (62, 4)
+        return np.concatenate((self.physics.data.xquat[1:], self.target_state), axis=0)
 
     def step(self, action):
 
@@ -91,20 +112,13 @@ class MotionEnv(gym.Env):
         # scale all action to pi. and limit to 1 degree per step
         action_scaled = action * (math.pi / 180)
 
-        start_state = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
-                                self.joint_r_shoulder_y.qpos0[0]], dtype=np.float32)
+        start_state = np.copy(self.physics.data.xquat[1:])
 
-        self.joint_r_shoulder_p.qpos0[0] += action_scaled[0]
-        self.joint_r_shoulder_r.qpos0[0] += action_scaled[1]
-        self.joint_r_shoulder_y.qpos0[0] += action_scaled[2]
+        self.physics.step()
 
-        mujoco.mj_step(self.model, self.data)
+        current_state = np.copy(self.physics.data.xquat[1:])
 
-        current_state = np.array([self.joint_r_shoulder_p.qpos0[0], self.joint_r_shoulder_r.qpos0[0],
-                                  self.joint_r_shoulder_y.qpos0[0]], dtype=np.float32)
-
-        # observation is current state concatenated with target state
-        observation = self._get_obs()
+        # todo, update reward function
         # reward is the distance between current state and target state
         # if current closer to target, the reward is higher, and vice versa
         reward = euclidean_distance(
@@ -117,6 +131,9 @@ class MotionEnv(gym.Env):
         # when step reach a certain number, truncate
 
         truncate = True if self.steps_took > 1000 else False
+
+        # observation is current state concatenated with target state
+        observation = self._get_obs()
 
         return observation, reward, done, truncate, {}
 

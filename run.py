@@ -158,6 +158,11 @@ class JointsController:
         # all joints are hinge joints, so just set the radian
         self.physics.model.jnt(name).qpos0[0] = rotation
 
+    def reset_joint_rotations(self):
+        # reset all joints rotation to 0
+        for i in range(1, self.physics.model.njnt):
+            self.physics.model.jnt(i).qpos0[0] = 0
+
 
 class ActuatorController:
 
@@ -218,9 +223,11 @@ jntController = JointsController(physics)
 # exit(0)
 
 # # use all joints rotation as action space, (56,)
-# print(jntController.get_joints_rotation().shape)
+# print(jntController.get_joints_rotation())
 # # body rotation as observation spaece, exclude worldbody, (32, 4)
 # print(physics.data.xquat.shape)
+
+
 
 
 duration = 2    # (seconds)
@@ -232,7 +239,7 @@ frames = []
 
 physics.reset()  # Reset state and time
 
-a = np.copy(physics.data.xquat)
+a = np.round(np.copy(physics.data.xquat), decimals=2)
 
 
 # set the joint rotation directly to get the desired pose
@@ -261,7 +268,7 @@ b = np.round(physics.data.xquat, decimals=2)
 # for i in range(a.shape[0]):
 #     print(angle_between_quat(a[i], b[i]))
 
-print(b)
+print(a, b)
 
 # print(frames)
 # Save the frames as a GIF
