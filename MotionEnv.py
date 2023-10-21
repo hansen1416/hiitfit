@@ -135,8 +135,7 @@ class MotionEnv(gym.Env):
 
         # apply action to all joints
         for i in range(1, self.physics.model.njnt):
-            self.jntController.set_joint_rotation(
-                self.physics.model.jnt(i).name, action_scaled[i-1])
+            self.jntController.set_joint_rotation(i, action_scaled[i])
 
         self.physics.step()
 
@@ -202,7 +201,7 @@ if __name__ == "__main__":
 
     env.reset()
 
-    for _ in range(40000):
+    for _ in range(10):
 
         # Take a random action
         action = env.action_space.sample()

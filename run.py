@@ -170,7 +170,9 @@ jntController = JointsController(physics)
 # exit(0)
 
 # # use all joints rotation as action space, (56,)
-# print(jntController.get_joints_rotation())
+print(jntController.get_joints_rotation())
+print(len(jntController.get_joints_rotation()))
+exit()
 # # body rotation as observation spaece, exclude worldbody, (32, 4)
 # print(physics.data.xquat.shape)
 
