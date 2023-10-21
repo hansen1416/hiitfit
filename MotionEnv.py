@@ -26,16 +26,28 @@ and average the reward per episode to have a good estimate.
 
 import math
 import os
+import time
 
 import numpy as np
 from dm_control import mujoco
 from dm_control.mujoco.wrapper.mjbindings import enums
-from transforms3d import quaternions
 import gymnasium as gym
 from gymnasium import spaces
 from stable_baselines3.common.env_checker import check_env
+import PIL.Image
 
-from utils import euclidean_distance, JointsController
+from utils import JointsController, angle_between_quat
+
+
+def pose_angle_diff(pose1, pose2):
+    """
+    calculate the angle difference between two poses
+    """
+    angle_diff = np.zeros(pose1.shape[0])
+    for i in range(pose1.shape[0]):
+        angle_diff[i] = angle_between_quat(pose1[i], pose2[i])
+
+    return angle_diff
 
 
 class MotionEnv(gym.Env):
@@ -49,7 +61,7 @@ class MotionEnv(gym.Env):
             low=-1.0, high=1.0, shape=(56,), dtype=np.float32)
         # body rotation as observation spaece, exclude worldbody, concatenate with target state, shape (62, 4)
         self.observation_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(62, 4), dtype=np.float32)
+            low=-1.0, high=1.0, shape=(62*4, ), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 
@@ -90,7 +102,11 @@ class MotionEnv(gym.Env):
                                       [0.74, 0.39, -0.53, -0.15],],)
 
         self.steps_took = 0
-        self.viewer = None
+        self.frames = []
+        self.framerate = 60
+
+        self.scene_option = mujoco.wrapper.core.MjvOption()
+        self.scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
 
         self.jntController = JointsController(self.physics)
 
@@ -102,31 +118,45 @@ class MotionEnv(gym.Env):
         print("__del__ called")
 
     def _get_obs(self):
-        # body rotation as observation spaece, exclude worldbody, concatenate with target state, shape (62, 4)
-        return np.concatenate((self.physics.data.xquat[1:], self.target_state), axis=0)
+        # body rotation as observation spaece, exclude worldbody,
+        # concatenate with target state, shape (62, 4)
+        # then flatten to (62*4, )
+        return np.concatenate((self.physics.data.xquat[1:], self.target_state), axis=0, dtype=np.float32).flatten()
 
     def step(self, action):
 
         self.steps_took += 1
 
+        # get state before taking action
+        start_state = np.copy(self.physics.data.xquat[1:]).astype(np.float32)
+
         # scale all action to pi. and limit to 1 degree per step
         action_scaled = action * (math.pi / 180)
 
-        start_state = np.copy(self.physics.data.xquat[1:])
+        # apply action to all joints
+        for i in range(1, self.physics.model.njnt):
+            self.jntController.set_joint_rotation(
+                self.physics.model.jnt(i).name, action_scaled[i-1])
 
         self.physics.step()
 
-        current_state = np.copy(self.physics.data.xquat[1:])
+        if (self.steps_took % self.framerate) == 0:
+            pixels = self.physics.render(scene_option=self.scene_option)
+            self.frames.append(PIL.Image.fromarray(pixels))
 
-        # todo, update reward function
-        # reward is the distance between current state and target state
-        # if current closer to target, the reward is higher, and vice versa
-        reward = euclidean_distance(
-            start_state, self.target_state) - euclidean_distance(current_state, self.target_state)
+        current_state = np.copy(self.physics.data.xquat[1:]).astype(np.float32)
+
+        # get angle difference with the target state before and after apply actions
+        # if state is closer to target state after apply the action,
+        # reward is positive and vice versa
+        start_angle_diff = pose_angle_diff(start_state, self.target_state)
+        current_angle_diff = pose_angle_diff(current_state, self.target_state)
+        reward = np.sum(np.sqrt(start_angle_diff)) - \
+            np.sum(np.sqrt(current_angle_diff))
 
         # if current state is np.close true to target state, done
-        done = bool(np.isclose(current_state,
-                    self.target_state, atol=0.01).all())
+        done = bool(np.isclose(current_angle_diff, np.zeros(
+            current_angle_diff.shape[0]), atol=0.01).all())
 
         # when step reach a certain number, truncate
 
@@ -140,38 +170,23 @@ class MotionEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
-        mujoco.mj_resetData(self.model, self.data)
-
-        self.joint_r_shoulder_p.qpos0[0] = self.initial_state[0]
-        self.joint_r_shoulder_r.qpos0[0] = self.initial_state[1]
-        self.joint_r_shoulder_y.qpos0[0] = self.initial_state[2]
-
-        observation = self._get_obs()
+        self.physics.reset()
 
         self.steps_took = 0
+        self.frames = []
 
-        return observation, {}
+        return self._get_obs(), {}
 
     def render(self, mode="human"):
+        # save the frames as a GIF, to path frames/{timestamp}.gif
+        filename = os.path.join(
+            "frames", f"{time.time()}-{self.steps_took}.gif")
 
-        if self.viewer is None:
-
-            self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
-
-            self.viewer.cam.lookat[0] = 0  # x position
-            self.viewer.cam.lookat[1] = 0  # y position
-            self.viewer.cam.lookat[2] = 0  # z position
-            self.viewer.cam.distance = 6  # distance from the target
-            self.viewer.cam.elevation = -30  # elevation angle
-            self.viewer.cam.azimuth = 180  # azimuth angle
-
-        if mode == "human":
-
-            self.viewer.sync()
+        self.frames[0].save(filename, save_all=True,
+                            append_images=self.frames[1:], duration=100, loop=0)
 
     def close(self):
-
-        self.viewer.close()
+        pass
 
 
 if __name__ == "__main__":
@@ -188,9 +203,11 @@ if __name__ == "__main__":
         action = env.action_space.sample()
         obs, reward, done, truncate, info = env.step(action)
 
-        env.render()
+        if truncate == True:
+            env.render()
 
         if done == True:
+            env.render()
             break
 
     env.close()

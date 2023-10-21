@@ -43,6 +43,7 @@ img/
 logs/
 models/
 videos/
+frames/
 
 mjmodel.mjb
 MJDATA.TXT

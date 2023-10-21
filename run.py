@@ -84,6 +84,8 @@ from dm_env import specs
 from transforms3d import quaternions
 import PIL.Image
 
+from utils import JointsController
+
 xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 # from dm_control import viewer
 
@@ -145,67 +147,12 @@ xquat is a quaternion that describes the orientation of the body in space.
 """
 
 
-class JointsController:
-
-    def __init__(self, physics) -> None:
-        self.physics = physics
-
-    def get_joints_rotation(self):
-        # get all joints rotation, exclude the first freejoint
-        return np.array([self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)])
-
-    def set_joint_rotation(self, name, rotation):
-        # all joints are hinge joints, so just set the radian
-        self.physics.model.jnt(name).qpos0[0] = rotation
-
-    def reset_joint_rotations(self):
-        # reset all joints rotation to 0
-        for i in range(1, self.physics.model.njnt):
-            self.physics.model.jnt(i).qpos0[0] = 0
-
-
-class ActuatorController:
-
-    def __init__(self, physics) -> None:
-        self.physics = physics
-
-    def set_value(self, name, val):
-        self.physics.data.ctrl[physics.model.actuator(name).id] = val
-
-
-def angle_between_mat(a, b):
-    a = np.copy(a).reshape(3, 3)
-    b = np.copy(b).reshape(3, 3)
-
-    # get quaternion from rotation matrix
-    q1 = quaternions.mat2quat(a)
-    q2 = quaternions.mat2quat(b)
-
-    # get quternion that rotate from q1 to q2
-    q = quaternions.qmult(q2, quaternions.qinverse(q1))
-
-    # get rotation axis and angle
-    _, angle = quaternions.quat2axangle(q)
-
-    # print(axis, round(angle,2), angle < 0.001, np.isclose(angle, 0.0, atol=1e-3))
-    return angle
-
-
-def angle_between_quat(q1, q2):
-
-    # get quternion that rotate from q1 to q2
-    q = quaternions.qmult(q2, quaternions.qinverse(q1))
-
-    # get rotation axis and angle
-    _, angle = quaternions.quat2axangle(q)
-
-    # print(axis, round(angle,2), angle < 0.001, np.isclose(angle, 0.0, atol=1e-3))
-    return angle
-
-
 # print(physics.model.actuator('headrx'))
 # print(len(physics.data.ctrl))
 physics.model.opt.gravity = [0, 0, -9.81*0]
+
+# print(dir(physics))
+# exit()
 
 scene_option = mujoco.wrapper.core.MjvOption()
 scene_option.flags[enums.mjtVisFlag.mjVIS_JOINT] = True
@@ -228,8 +175,6 @@ jntController = JointsController(physics)
 # print(physics.data.xquat.shape)
 
 
-
-
 duration = 2    # (seconds)
 framerate = 30  # (Hz)
 
@@ -250,6 +195,10 @@ jntController.set_joint_rotation('lhumerusrz', -1.4)
 jntController.set_joint_rotation('lhumerusrx', 0.5)
 jntController.set_joint_rotation('rhumerusrz', 1.4)
 jntController.set_joint_rotation('rhumerusrx', 0.5)
+
+physics.step()
+print(np.round(physics.data.xquat[1:], decimals=2))
+exit()
 
 
 while physics.data.time < duration:
