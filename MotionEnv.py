@@ -159,8 +159,7 @@ class MotionEnv(gym.Env):
             current_angle_diff.shape[0]), atol=0.01).all())
 
         # when step reach a certain number, truncate
-
-        truncate = True if self.steps_took > 1000 else False
+        truncate = True if self.steps_took > 10000 else False
 
         # observation is current state concatenated with target state
         observation = self._get_obs()
@@ -172,12 +171,18 @@ class MotionEnv(gym.Env):
 
         self.physics.reset()
 
+        self.render()
+
         self.steps_took = 0
         self.frames = []
 
         return self._get_obs(), {}
 
     def render(self, mode="human"):
+
+        if not len(self.frames):
+            return
+
         # save the frames as a GIF, to path frames/{timestamp}.gif
         filename = os.path.join(
             "frames", f"{time.time()}-{self.steps_took}.gif")
