@@ -169,6 +169,8 @@ jntController = JointsController(physics)
 
 # exit(0)
 
+print(np.round(physics.data.xquat[1:]))
+
 # # use all joints rotation as action space, (56,)
 print(jntController.get_joints_rotation())
 print(len(jntController.get_joints_rotation()))

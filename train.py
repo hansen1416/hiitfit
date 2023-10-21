@@ -64,7 +64,7 @@ def train_agent(env, algorithm, params={}):
         model = algorithm('MlpPolicy', env, verbose=1,
                           tensorboard_log=logdir, **params)
 
-    TIMESTEPS = 1000000
+    TIMESTEPS = 100000
 
     tensorboard_callback = TensorboardCallback()
     # # Create the callback object

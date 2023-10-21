@@ -131,11 +131,13 @@ class MotionEnv(gym.Env):
         start_state = np.copy(self.physics.data.xquat[1:]).astype(np.float32)
 
         # scale all action to pi. and limit to 1 degree per step
-        action_scaled = action * (math.pi / 180)
+        # action_scaled = action * (math.pi / 180)
+        action_scaled = action * 0.1
 
-        # apply action to all joints
+        # apply action to all joints, exclude root freejoint
+        # so the first action is for joint 1
         for i in range(1, self.physics.model.njnt):
-            self.jntController.set_joint_rotation(i, action_scaled[i])
+            self.jntController.set_joint_rotation(i, action_scaled[i-1])
 
         self.physics.step()
 
@@ -200,6 +202,39 @@ if __name__ == "__main__":
     check_env(env)
 
     env.reset()
+
+    # start_state = np.copy(env.physics.data.xquat[1:]).astype(np.float32)
+
+    # print(np.round(start_state))
+
+    # # factor = (math.pi / 180)
+    # factor = 0.1
+
+    # # env.jntController.set_joint_rotation('lfemurrz', 0.17*factor)
+    # # env.jntController.set_joint_rotation('rfemurrz', -0.17*factor)
+
+    # # env.jntController.set_joint_rotation('lhumerusrz', -1.4*factor)
+    # # env.jntController.set_joint_rotation('lhumerusrx', 0.5*factor)
+    # # env.jntController.set_joint_rotation('rhumerusrz', 1.4*factor)
+    # # env.jntController.set_joint_rotation('rhumerusrx', 0.5*factor)
+
+    # print(env.jntController.get_joints_rotation())
+
+    # env.physics.step()
+
+    # current_state = np.copy(env.physics.data.xquat[1:]).astype(np.float32)
+
+    # print(np.round(current_state))
+
+    # start_angle_diff = pose_angle_diff(start_state, env.target_state)
+
+    # current_angle_diff = pose_angle_diff(current_state, env.target_state)
+    # reward = np.sum(np.sqrt(start_angle_diff)) - \
+    #     np.sum(np.sqrt(current_angle_diff))
+
+    # print(reward)
+
+    # exit()
 
     for _ in range(10):
 

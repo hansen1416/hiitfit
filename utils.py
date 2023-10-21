@@ -20,7 +20,7 @@ class JointsController:
 
     def get_joints_rotation(self):
         # get all joints rotation, exclude the first freejoint
-        return np.array([self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)])
+        return np.round(np.array([self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)]), decimals=2)
 
     def set_joint_rotation(self, name, rotation):
         # all joints are hinge joints, so just set the radian
