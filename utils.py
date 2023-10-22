@@ -26,6 +26,16 @@ class JointsController:
         # all joints are hinge joints, so just set the radian
         self.physics.model.jnt(name).qpos0[0] = rotation
 
+    def set_rotation_by_names(self, rotation_dict):
+        # set rotation by joint names
+        for name, rotation in rotation_dict.items():
+            self.physics.model.jnt(name).qpos0[0] = rotation
+
+    def set_all_rotations(self, rotations):
+        # set all joints qpos0, except the root freejoint
+        for i in range(len(rotations)):
+            self.physics.model.jnt(i+1).qpos0[0] = rotations[i]
+
     def reset_joint_rotations(self):
         # reset all joints rotation to 0
         for i in range(1, self.physics.model.njnt):

@@ -84,7 +84,7 @@ from dm_env import specs
 from transforms3d import quaternions
 import PIL.Image
 
-from utils import JointsController
+from utils import JointsController, euclidean_distance
 
 xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 # from dm_control import viewer
@@ -169,12 +169,12 @@ jntController = JointsController(physics)
 
 # exit(0)
 
-print(np.round(physics.data.xquat[1:]))
+# print(np.round(physics.data.xquat[1:]))
 
-# # use all joints rotation as action space, (56,)
-print(jntController.get_joints_rotation())
-print(len(jntController.get_joints_rotation()))
-exit()
+# # # use all joints rotation as action space, (56,)
+# print(jntController.get_joints_rotation())
+# print(len(jntController.get_joints_rotation()))
+# exit()
 # # body rotation as observation spaece, exclude worldbody, (32, 4)
 # print(physics.data.xquat.shape)
 
@@ -188,22 +188,34 @@ frames = []
 
 physics.reset()  # Reset state and time
 
-a = np.round(np.copy(physics.data.xquat), decimals=2)
+target_state = np.array([
+    0.17,  0.,    0.,    0.,    0.,    0.,    0.,   -0.17,  0.,    0.,    0.,    0.,
+    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,
+    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,   -1.4,   0.,
+    0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    1.4,   0.,
+    0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,
+])
+
+start_state = np.copy(jntController.get_joints_rotation()).astype(np.float32)
+
+print(len(start_state))
+
+# d1 = euclidean_distance(start_state, target_state)
+
+# a = np.round(np.copy(physics.data.ximat), decimals=2)
 
 
-# set the joint rotation directly to get the desired pose
-jntController.set_joint_rotation('lfemurrz', 0.17)
-jntController.set_joint_rotation('rfemurrz', -0.17)
+# d2 = euclidean_distance(jntController.get_joints_rotation(), target_state)
 
-jntController.set_joint_rotation('lhumerusrz', -1.4)
-jntController.set_joint_rotation('lhumerusrx', 0.5)
-jntController.set_joint_rotation('rhumerusrz', 1.4)
-jntController.set_joint_rotation('rhumerusrx', 0.5)
+# print(d1, d2)
 
-physics.step()
-print(np.round(physics.data.xquat[1:], decimals=2))
-exit()
+# physics.step()
+# print(np.round(physics.data.ximat, decimals=2))
+# exit()
 
+
+factor = math.pi / 180
+step = 0
 
 while physics.data.time < duration:
     physics.step()
@@ -212,16 +224,41 @@ while physics.data.time < duration:
     # are generally much smaller than framerates (the default timestep is 2ms),
     # we don't render after each step.
     if len(frames) < physics.data.time * framerate:
+
+        start_state = np.copy(
+            jntController.get_joints_rotation()).astype(np.float32)
+
+        d1 = euclidean_distance(start_state, target_state)
+
+        # # set the joint rotation directly to get the desired pose
+        jntController.set_rotation_by_names({
+            'lfemurrz': 0.17 * factor * step,
+            'rfemurrz': -0.17 * factor * step,
+            'lhumerusrz': -1.4 * factor * step,
+            'lhumerusrx': 0.5 * factor * step,
+            'rhumerusrz': 1.4 * factor * step,
+            'rhumerusrx': 0.5 * factor * step,
+        })
+
+        d2 = euclidean_distance(
+            jntController.get_joints_rotation(), target_state)
+
+        print(d1, d2, (d1 - d2) * 100)
+
+        step += 1
+
         pixels = physics.render(scene_option=scene_option)
         frames.append(PIL.Image.fromarray(pixels))
 
+print(step)
+
 # output `xmat`, we will use as the target for reinforcement learning
-b = np.round(physics.data.xquat, decimals=2)
+# b = np.round(physics.data.xquat, decimals=2)
 
 # for i in range(a.shape[0]):
 #     print(angle_between_quat(a[i], b[i]))
 
-print(a, b)
+# print(a, b)
 
 # print(frames)
 # Save the frames as a GIF
