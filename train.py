@@ -86,4 +86,4 @@ if __name__ == "__main__":
     env = MotionEnv()
     # env.reset()
 
-    train_agent(env, PPO)
+    train_agent(env, PPO, params={"learning_rate": 0.001})

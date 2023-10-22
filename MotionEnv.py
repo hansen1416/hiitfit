@@ -139,7 +139,7 @@ class MotionEnv(gym.Env):
             self.render()
 
         # when step reach a certain number, truncate
-        truncate = True if self.steps_took > 1000 else False
+        truncate = True if self.steps_took > 10000 else False
 
         # observation is current state concatenated with target state
         observation = self._get_obs()
