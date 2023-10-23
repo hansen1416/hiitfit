@@ -80,10 +80,62 @@ def train_agent(env, algorithm, params={}):
 
     model.save(f"{models_dir}/{last_iter + TIMESTEPS}.zip")
 
+def check_model():
+
+    env = MotionEnv()
+    env.reset()
+
+    # models_dir = os.path.join(os.path.dirname(
+    #     __file__), 'models', env.__class__.__name__ + '-' + 'PPO')
+
+    # paths = sorted(Path(models_dir).iterdir(), key=os.path.getmtime)
+
+    # model = PPO.load(paths[-1], env=env)
+
+    model = PPO('MlpPolicy', env, verbose=1)
+
+    # print(dir(model))
+    print(model.policy)
+    """
+    ActorCriticPolicy(
+        (features_extractor): FlattenExtractor(
+            (flatten): Flatten(start_dim=1, end_dim=-1)
+        )
+        (pi_features_extractor): FlattenExtractor(
+            (flatten): Flatten(start_dim=1, end_dim=-1)
+        )
+        (vf_features_extractor): FlattenExtractor(
+            (flatten): Flatten(start_dim=1, end_dim=-1)
+        )
+        (mlp_extractor): MlpExtractor(
+            (policy_net): Sequential(
+            (0): Linear(in_features=112, out_features=64, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=64, out_features=64, bias=True)
+            (3): Tanh()
+            )
+            (value_net): Sequential(
+            (0): Linear(in_features=112, out_features=64, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=64, out_features=64, bias=True)
+            (3): Tanh()
+            )
+        )
+        (action_net): Linear(in_features=64, out_features=56, bias=True)
+        (value_net): Linear(in_features=64, out_features=1, bias=True)
+    )
+    """
+
+    # print(model.policy.features_extractor)
+    # print(model.policy.mlp_extractor)
+    # print(model.policy_kwargs)
+
 
 if __name__ == "__main__":
 
-    env = MotionEnv()
-    # env.reset()
+    check_model()
 
-    train_agent(env, PPO, params={"learning_rate": 0.001})
+    # env = MotionEnv()
+    # # env.reset()
+
+    # train_agent(env, PPO, params={"learning_rate": 0.001})

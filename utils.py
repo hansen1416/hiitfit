@@ -18,6 +18,10 @@ class JointsController:
     def __init__(self, physics) -> None:
         self.physics = physics
 
+    def get_joints_names_rotation(self):
+        # get all joints rotation, exclude the first freejoint
+        return {self.physics.model.jnt(i).name: self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)}
+
     def get_joints_rotation(self):
         # get all joints rotation, exclude the first freejoint
         return np.round(np.array([self.physics.model.jnt(i).qpos0[0] for i in range(1, self.physics.model.njnt)]), decimals=2)
