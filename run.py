@@ -141,6 +141,7 @@ xpos is a 3D vector that represents the position of the body’s center of mass
 in the global coordinate system 1.
 
 xquat is a quaternion that describes the orientation of the body in space.
+it include the workdbody
 """
 
 
@@ -205,6 +206,15 @@ step = 1
 
 xquat = None
 
+jntController.set_rotation_by_names({
+    'lfemurrz': 0.17 * factor * step,
+    'rfemurrz': -0.17 * factor * step,
+    'lhumerusrz': -1.4 * factor * step,
+    'lhumerusrx': 0.5 * factor * step,
+    'rhumerusrz': 1.4 * factor * step,
+    'rhumerusrx': 0.5 * factor * step,
+})
+
 while physics.data.time < duration:
     physics.step()
 
@@ -213,15 +223,15 @@ while physics.data.time < duration:
     # we don't render after each step.
     if len(frames) < physics.data.time * framerate:
 
-        # # set the joint rotation directly to get the desired pose
-        jntController.set_rotation_by_names({
-            'lfemurrz': 0.17 * factor * step,
-            'rfemurrz': -0.17 * factor * step,
-            'lhumerusrz': -1.4 * factor * step,
-            'lhumerusrx': 0.5 * factor * step,
-            'rhumerusrz': 1.4 * factor * step,
-            'rhumerusrx': 0.5 * factor * step,
-        })
+        # # # set the joint rotation directly to get the desired pose
+        # jntController.set_rotation_by_names({
+        #     'lfemurrz': 0.17 * factor * step,
+        #     'rfemurrz': -0.17 * factor * step,
+        #     'lhumerusrz': -1.4 * factor * step,
+        #     'lhumerusrx': 0.5 * factor * step,
+        #     'rhumerusrz': 1.4 * factor * step,
+        #     'rhumerusrx': 0.5 * factor * step,
+        # })
 
         body_r = jntController.get_body_rotations()
 

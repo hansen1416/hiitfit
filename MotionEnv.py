@@ -59,9 +59,10 @@ class MotionEnv(gym.Env):
         # action space is 3 continuous values, representing of 3 rotations of the shoulder
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(56,), dtype=np.float32)
-        # difference between current joint rotation qpos0 and target state as observation space, exclude root freejoint,
+        # difference between current body euler angles and target body euler as observation space,
+        # exclude root worldbody, shape (31*3, )
         self.observation_space = spaces.Box(
-            low=-1., high=1., shape=(56, ), dtype=np.float32)
+            low=-1., high=1., shape=(93, ), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 
@@ -69,13 +70,14 @@ class MotionEnv(gym.Env):
 
         self.physics.model.opt.gravity = [0, 0, -9.81*0]
 
-        self.target_state = np.array([
-            0.17,  0.,    0.,    0.,    0.,    0.,    0.,   -0.17,  0.,    0.,    0.,    0.,
-            0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,
-            0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,   -1.4,   0.,
-            0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    1.4,   0.,
-            0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,
-        ])
+        self.target_state = np.array([1.57, -0.,    0.,    1.57, -0.,    0.,    1.57, -0.17,  0.,    1.57, -0.17,  0.,
+                                      0.,   -0.17,  0.,    0.,   -0.17,  0.,    1.57, -0.,    0.,    1.57,  0.17, -0.,
+                                      1.57,  0.17, -0.,    0.,    0.17, -0.,    0.,    0.17, -0.,    1.57, -0.,    0.,
+                                      1.57,  0.,   -0.,    1.57, -0.,   -0.,    1.57, -0.,   -0.,    1.57, -0.,   -0.,
+                                      1.57, -0.,   -0.,    1.57,  0.,    0.,    1.59,  0.15, -3.06,  1.59,  0.15, -3.06,
+                                      1.43, -0.05,  1.13,  1.43, -0.05,  1.13,  1.43, -0.05,  1.13,  1.38,  0.72,  1.,
+                                      1.57, -0.,   -0.,    1.59, -0.15,  3.06,  1.59, -0.15,  3.06,  1.43,  0.05, -1.13,
+                                      1.43,  0.05, -1.13,  1.43,  0.05, -1.13,  1.38, -0.72, -1.,])
 
         self.steps_took = 0
         self.frames = []

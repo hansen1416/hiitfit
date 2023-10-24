@@ -53,7 +53,7 @@ class JointsController:
         # convert to euler
         r_euler = r_matrix.as_euler('xyz', degrees=False)
         # reshape `r_euler` from (n, 3) to (n*3)
-        return r_euler.reshape(-1)
+        return np.round(r_euler.reshape(-1), decimals=2)
 
 
 def euclidean_distance(a, b):
