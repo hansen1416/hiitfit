@@ -69,8 +69,7 @@
 >
 """
 
-import math
-import time
+
 import os
 
 import numpy as np
@@ -79,10 +78,8 @@ from dm_control import viewer
 from dm_control import suite
 # Access to enums and MuJoCo library functions.
 from dm_control.mujoco.wrapper.mjbindings import enums
-from dm_control.mujoco.wrapper.mjbindings import mjlib
-from dm_env import specs
-from transforms3d import quaternions
 import PIL.Image
+from scipy.spatial.transform import Rotation
 
 from utils import JointsController, euclidean_distance
 
@@ -165,9 +162,6 @@ jntController = JointsController(physics)
 #     print(physics.model.jnt(i).name)
 
 # # Cartesian orientation of body frame, include worldbody
-# print(physics.data.xquat)
-
-# exit(0)
 
 # print(np.round(physics.data.xquat[1:]))
 
@@ -188,18 +182,6 @@ frames = []
 
 physics.reset()  # Reset state and time
 
-target_state = np.array([
-    0.17,  0.,    0.,    0.,    0.,    0.,    0.,   -0.17,  0.,    0.,    0.,    0.,
-    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,
-    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,   -1.4,   0.,
-    0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    1.4,   0.,
-    0.5,   0.,    0.,    0.,    0.,    0.,    0.,    0.,
-])
-
-start_state = np.copy(jntController.get_joints_rotation()).astype(np.float32)
-
-print(len(start_state))
-
 # d1 = euclidean_distance(start_state, target_state)
 
 # a = np.round(np.copy(physics.data.ximat), decimals=2)
@@ -214,8 +196,14 @@ print(len(start_state))
 # exit()
 
 
-factor = math.pi / 180
-step = 0
+# factor = math.pi / 180
+# step = 0
+
+factor = 1
+step = 1
+
+
+xquat = None
 
 while physics.data.time < duration:
     physics.step()
@@ -224,11 +212,6 @@ while physics.data.time < duration:
     # are generally much smaller than framerates (the default timestep is 2ms),
     # we don't render after each step.
     if len(frames) < physics.data.time * framerate:
-
-        start_state = np.copy(
-            jntController.get_joints_rotation()).astype(np.float32)
-
-        d1 = euclidean_distance(start_state, target_state)
 
         # # set the joint rotation directly to get the desired pose
         jntController.set_rotation_by_names({
@@ -240,12 +223,27 @@ while physics.data.time < duration:
             'rhumerusrx': 0.5 * factor * step,
         })
 
-        d2 = euclidean_distance(
-            jntController.get_joints_rotation(), target_state)
+        # r_matrix = Rotation.from_matrix(physics.data.xmat[1:])
 
-        print(d1, d2, (d1 - d2) * 100)
+        # reshape physics.data.xmat[1:], from (n, 9) to (n, 3, 3)
+        r_matrix = Rotation.from_matrix(
+            physics.data.xmat[1:].reshape(-1, 3, 3))
 
-        step += 1
+        r_euler = r_matrix.as_euler('xyz', degrees=False)
+
+        # print(np.round(r_matrix.as_euler('xyz', degrees=False), decimals=2))
+
+        if xquat is None:
+            xquat = np.copy(r_euler)
+        else:
+            dist = euclidean_distance(xquat, r_euler)
+
+            print(dist, dist < 0.01)
+            xquat = np.copy(r_euler)
+
+        # print(physics.data.xquat)
+
+        # step += 1
 
         pixels = physics.render(scene_option=scene_option)
         frames.append(PIL.Image.fromarray(pixels))
