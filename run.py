@@ -223,23 +223,17 @@ while physics.data.time < duration:
             'rhumerusrx': 0.5 * factor * step,
         })
 
-        # r_matrix = Rotation.from_matrix(physics.data.xmat[1:])
+        body_r = jntController.get_body_rotations()
 
-        # reshape physics.data.xmat[1:], from (n, 9) to (n, 3, 3)
-        r_matrix = Rotation.from_matrix(
-            physics.data.xmat[1:].reshape(-1, 3, 3))
-
-        r_euler = r_matrix.as_euler('xyz', degrees=False)
-
-        # print(np.round(r_matrix.as_euler('xyz', degrees=False), decimals=2))
+        print(body_r)
 
         if xquat is None:
-            xquat = np.copy(r_euler)
+            xquat = body_r
         else:
-            dist = euclidean_distance(xquat, r_euler)
+            dist = euclidean_distance(xquat, body_r)
 
             print(dist, dist < 0.01)
-            xquat = np.copy(r_euler)
+            xquat = body_r
 
         # print(physics.data.xquat)
 

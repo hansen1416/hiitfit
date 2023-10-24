@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 from transforms3d import quaternions
+from scipy.spatial.transform import Rotation
 
 
 class ActuatorController:
@@ -44,6 +45,15 @@ class JointsController:
         # reset all joints rotation to 0
         for i in range(1, self.physics.model.njnt):
             self.physics.model.jnt(i).qpos0[0] = 0
+
+    def get_body_rotations(self):
+        # reshape physics.data.xmat[1:], from (n, 9) to (n, 3, 3)
+        r_matrix = Rotation.from_matrix(
+            self.physics.data.xmat[1:].reshape(-1, 3, 3))
+        # convert to euler
+        r_euler = r_matrix.as_euler('xyz', degrees=False)
+        # reshape `r_euler` from (n, 3) to (n*3)
+        return r_euler.reshape(-1)
 
 
 def euclidean_distance(a, b):
