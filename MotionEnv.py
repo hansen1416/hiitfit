@@ -59,9 +59,9 @@ class MotionEnv(gym.Env):
         # action space is 3 continuous values, representing of 3 rotations of the shoulder
         self.action_space = spaces.Box(
             low=-1.0, high=1.0, shape=(56,), dtype=np.float32)
-        # joint rotation qpos0 as observation space, exclude root freejoint, concatenate with target state, shape (56*2,)
+        # difference between current joint rotation qpos0 and target state as observation space, exclude root freejoint,
         self.observation_space = spaces.Box(
-            low=-math.pi, high=math.pi, shape=(56*2, ), dtype=np.float32)
+            low=-1., high=1., shape=(56, ), dtype=np.float32)
 
         xml_path = os.path.join('assets', 'xml', 'humanoid_CMU.xml')
 
@@ -94,10 +94,14 @@ class MotionEnv(gym.Env):
         print("__del__ called")
 
     def _get_obs(self):
-        # body rotation as observation spaece, exclude worldbody,
-        # concatenate with target state, shape (62, 4)
-        # then flatten to (62*4, )
-        return np.concatenate((self.jntController.get_joints_rotation(), self.target_state), axis=0, dtype=np.float32)
+        # difference between current state and target state
+        obs = self.jntController.get_joints_rotation() - self.target_state
+        # scale to -1 to 1
+        obs = obs / math.pi
+        # cast data type to float32
+        obs = obs.astype(np.float32)
+
+        return obs
 
     def step(self, action):
 
@@ -139,7 +143,7 @@ class MotionEnv(gym.Env):
             self.render()
 
         # when step reach a certain number, truncate
-        truncate = True if self.steps_took > 10000 else False
+        truncate = True if self.steps_took > 2000 else False
 
         # observation is current state concatenated with target state
         observation = self._get_obs()
@@ -221,8 +225,9 @@ if __name__ == "__main__":
         action = env.action_space.sample()
         obs, reward, done, truncate, info = env.step(action)
 
-        # if truncate == True:
-        #     env.render()
+        if truncate == True:
+            env.render()
+            env.reset()
 
         # if done == True:
         #     env.render()

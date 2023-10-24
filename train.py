@@ -64,7 +64,7 @@ def train_agent(env, algorithm, params={}):
         model = algorithm('MlpPolicy', env, verbose=1,
                           tensorboard_log=logdir, **params)
 
-    TIMESTEPS = 1000000
+    TIMESTEPS = 100000
 
     tensorboard_callback = TensorboardCallback()
     # # Create the callback object
@@ -79,6 +79,7 @@ def train_agent(env, algorithm, params={}):
                 callback=[tensorboard_callback])
 
     model.save(f"{models_dir}/{last_iter + TIMESTEPS}.zip")
+
 
 def check_model():
 
@@ -133,9 +134,9 @@ def check_model():
 
 if __name__ == "__main__":
 
-    check_model()
+    # check_model()
 
-    # env = MotionEnv()
-    # # env.reset()
+    env = MotionEnv()
+    # env.reset()
 
-    # train_agent(env, PPO, params={"learning_rate": 0.001})
+    train_agent(env, PPO, params={})
