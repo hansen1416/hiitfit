@@ -97,7 +97,7 @@ class MotionEnv(gym.Env):
 
     def _get_obs(self):
         # difference between current state and target state
-        obs = self.jntController.get_joints_rotation() - self.target_state
+        obs = self.jntController.get_body_rotations() - self.target_state
         # scale to -1 to 1
         obs = obs / math.pi
         # cast data type to float32
@@ -111,7 +111,7 @@ class MotionEnv(gym.Env):
 
         # get state before taking action
         start_state = np.copy(
-            self.jntController.get_joints_rotation()).astype(np.float32)
+            self.jntController.get_body_rotations()).astype(np.float32)
 
         # scale all action to pi. and limit to 1 degree per step
         action_scaled = np.round(action * (math.pi / 60), decimals=2)
@@ -128,7 +128,7 @@ class MotionEnv(gym.Env):
             self.frames.append(PIL.Image.fromarray(pixels))
 
         current_state = np.copy(
-            self.jntController.get_joints_rotation()).astype(np.float32)
+            self.jntController.get_body_rotations()).astype(np.float32)
 
         # get angle difference with the target state before and after apply actions
         # if state is closer to target state after apply the action,
@@ -136,7 +136,7 @@ class MotionEnv(gym.Env):
         start_angle_diff = euclidean_distance(start_state, self.target_state)
         current_angle_diff = euclidean_distance(
             current_state, self.target_state)
-        reward = (start_angle_diff - current_angle_diff) * 1000
+        reward = (start_angle_diff - current_angle_diff) * 10
 
         # when current is close enough to target, done
         terminated = bool(current_angle_diff < 0.01)
