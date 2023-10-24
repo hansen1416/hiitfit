@@ -112,7 +112,7 @@ class MotionEnv(gym.Env):
             self.jntController.get_joints_rotation()).astype(np.float32)
 
         # scale all action to pi. and limit to 1 degree per step
-        action_scaled = np.round(action * (math.pi / 180), decimals=2)
+        action_scaled = np.round(action * (math.pi / 60), decimals=2)
         # action_scaled = action * 0.1
 
         # apply action to all joints, exclude root freejoint
@@ -134,7 +134,7 @@ class MotionEnv(gym.Env):
         start_angle_diff = euclidean_distance(start_state, self.target_state)
         current_angle_diff = euclidean_distance(
             current_state, self.target_state)
-        reward = (start_angle_diff - current_angle_diff) * 100
+        reward = (start_angle_diff - current_angle_diff) * 1000
 
         # when current is close enough to target, done
         terminated = bool(current_angle_diff < 0.01)
